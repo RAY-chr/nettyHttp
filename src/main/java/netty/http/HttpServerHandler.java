@@ -57,7 +57,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
                 code = method.invoke(RouteMethod.bean(name),
                         RouteMethod.parseRouteParameter(method, parameters));
                 if (code != null && annotation != null) {
-                    code = JsonUtils.objectToJson(code);
+                    if (type != String.class) {
+                        code = JsonUtils.objectToJson(code);
+                    }
                 }
                 if (code == null) {
                     code = nullStr;
@@ -93,7 +95,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         if (defaultHttpRequest.method() == HttpMethod.POST) {
             HttpHeaders headers = defaultHttpRequest.headers();
             Map<String, List<String>> map = new HashMap<>();
-            if (APPLICATION_JSON.equals(headers.get(HttpHeaderNames.CONTENT_TYPE))) {
+            if (headers.get(HttpHeaderNames.CONTENT_TYPE).contains(APPLICATION_JSON)) {
                 String s = defaultHttpRequest.content().toString(StandardCharsets.UTF_8);
                 JSONObject object = JSONObject.fromObject(s);
                 Set keySet = object.keySet();
