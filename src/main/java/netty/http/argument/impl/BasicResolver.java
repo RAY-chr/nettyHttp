@@ -1,7 +1,7 @@
 package netty.http.argument.impl;
 
 import netty.http.argument.ArgumentResolver;
-import netty.http.utils.BasicTypeChecker;
+import netty.http.utils.TypeChecker;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -16,7 +16,7 @@ import java.util.Map;
 public class BasicResolver implements ArgumentResolver {
     @Override
     public boolean handle(Class<?> type, Method method, Map<String, List<String>> parameters, int paramIndex) {
-        if (type == String.class || BasicTypeChecker.isPrimitive(type)) {
+        if (TypeChecker.isPrimitiveOrString(type) && !TypeChecker.checkHasCollection(type)) {
             Parameter[] methodParameters = method.getParameters();
             Parameter parameter = methodParameters[paramIndex];
             return parameters.containsKey(parameter.getName());
@@ -29,6 +29,6 @@ public class BasicResolver implements ArgumentResolver {
         Parameter[] methodParameters = method.getParameters();
         Parameter parameter = methodParameters[paramIndex];
         String s = parameters.get(parameter.getName()).get(0);
-        return BasicTypeChecker.parseValue(type, s);
+        return TypeChecker.parseValue(type, s);
     }
 }

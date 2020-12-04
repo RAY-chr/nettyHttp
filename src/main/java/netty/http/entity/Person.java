@@ -1,5 +1,7 @@
 package netty.http.entity;
 
+import java.util.List;
+
 /**
  * @author RAY
  * @descriptions
@@ -10,6 +12,15 @@ public class Person {
     private String no;
     private String name;
     private Info info;
+    private List<Info> list;
+
+    public List<Info> getList() {
+        return list;
+    }
+
+    public void setList(List<Info> list) {
+        this.list = list;
+    }
 
     public String getNo() {
         return no;

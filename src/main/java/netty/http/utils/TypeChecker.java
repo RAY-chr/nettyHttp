@@ -1,9 +1,15 @@
 package netty.http.utils;
 
 import com.alibaba.druid.sql.visitor.functions.Char;
+import netty.http.annotion.RequestParam;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -11,12 +17,13 @@ import java.util.Set;
  * @descriptions
  * @since 2020/12/3
  */
-public class BasicTypeChecker {
+public class TypeChecker {
     private static final Set<Class<?>> checker = new HashSet<>();
 
 
     /**
      * 判断类型是否是基本及其包装类类型
+     *
      * @param type
      * @return
      */
@@ -25,7 +32,53 @@ public class BasicTypeChecker {
     }
 
     /**
+     * 判断类型是否是基本及其包装类类型
      *
+     * @param type
+     * @return
+     */
+    public static boolean isPrimitiveOrString(Class<?> type) {
+        return isPrimitive(type) || type == String.class;
+    }
+
+    /**
+     * 检验是否有特定注解
+     *
+     * @param method
+     * @param paramIndex
+     * @param type
+     * @return
+     */
+    public static boolean checkAnnotation(Method method, int paramIndex, Class<?> type) {
+        Annotation[][] annotations = method.getParameterAnnotations();
+        for (Annotation annotation : annotations[paramIndex]) {
+            if (annotation.annotationType().equals(type)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检验类型是否包含集合
+     * @param type
+     * @return
+     */
+    public static boolean checkHasCollection(Class<?> type) {
+        if (Collection.class.isAssignableFrom(type)) {
+            return true;
+        }
+        Field[] fields = type.getDeclaredFields();
+        for (Field field : fields) {
+            Class<?> fieldType = field.getType();
+            if (Collection.class.isAssignableFrom(fieldType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * @param type
      * @param value
      * @return

@@ -1,13 +1,17 @@
 package netty.http.argument.impl;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import netty.http.argument.ArgumentResolver;
-import netty.http.utils.BasicTypeChecker;
+import netty.http.utils.TypeChecker;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
+
+import static netty.http.argument.impl.RequestBodyResolver.handleList;
 
 /**
  * @author RAY
@@ -15,39 +19,15 @@ import java.util.*;
  * @since 2020/12/2
  */
 public class BasicReferenceResolver implements ArgumentResolver {
+    private static final String LIST = "list";
     @Override
     public boolean handle(Class<?> type, Method method, Map<String, List<String>> parameters, int paramIndex) throws Exception {
-        if (!BasicTypeChecker.isPrimitive(type) && type != String.class) {
-            Field[] fields = type.getDeclaredFields();
-            if (fields.length < parameters.size()) {
-                for (Field field : fields) {
-                    parameters.keySet().remove(field.getName());
-                }
-                throw new IllegalArgumentException("amount of arguments is more -> " + parameters.keySet());
+        if (!TypeChecker.isPrimitiveOrString(type) && !TypeChecker.checkHasCollection(type)) {
+            JSONObject object = new JSONObject();
+            for (Map.Entry<String, List<String>> entry : parameters.entrySet()) {
+                object.put(entry.getKey(), entry.getValue().get(0));
             }
-            Set<String> set = new HashSet<>();
-            for (Field field : fields) {
-                Class<?> fieldType = field.getType();
-                if (fieldType == type) {
-                    throw new IllegalArgumentException("member can't be itself");
-                }
-                if (!BasicTypeChecker.isPrimitive(fieldType) && fieldType != String.class) {
-                    List<String> list = parameters.get(field.getName());
-                    if (list != null) {
-                        String s = list.get(0);
-                        if (s != null) {
-                            checkField(fieldType, JSONObject.fromObject(s));
-                        }
-                    }
-                }
-                String name = field.getName();
-                set.add(name);
-            }
-            for (String s : parameters.keySet()) {
-                if (!set.contains(s)) {
-                    throw new IllegalArgumentException("arguments: [" + s + "] not exist");
-                }
-            }
+            checkField(type, object);
             return true;
         }
         return false;
@@ -81,7 +61,7 @@ public class BasicReferenceResolver implements ArgumentResolver {
             if (fieldType == type) {
                 throw new IllegalArgumentException("member can't be itself");
             }
-            if (!BasicTypeChecker.isPrimitive(fieldType) && fieldType != String.class) {
+            if (!TypeChecker.isPrimitiveOrString(fieldType)) {
                 Object s = object.get(field.getName());
                 if (s != null) {
                     checkField(fieldType, JSONObject.fromObject(s));
@@ -100,42 +80,22 @@ public class BasicReferenceResolver implements ArgumentResolver {
 
     @Override
     public Object result(Class<?> type, Method method, Map<String, List<String>> parameters, int paramIndex) throws Exception {
-        Field[] fields = type.getDeclaredFields();
-        if (fields.length < parameters.size()) {
-            throw new IllegalArgumentException("amount of arguments is more");
+        JSONObject object = new JSONObject();
+        for (Map.Entry<String, List<String>> entry : parameters.entrySet()) {
+            object.put(entry.getKey(), entry.getValue().get(0));
         }
-        Object instance = type.newInstance();
-        for (Field field : fields) {
-            String name = field.getName();
-            if (parameters.containsKey(name)) {
-                Class<?> fieldType = field.getType();
-                field.setAccessible(true);
-                List<String> list = parameters.get(name);
-                if (list != null) {
-                    String s = list.get(0);
-                    if (!BasicTypeChecker.isPrimitive(fieldType) && fieldType != String.class) {
-                        if (s != null) {
-                            Object o = injectField(fieldType, JSONObject.fromObject(s));
-                            field.set(instance, o);
-                        }
-                    } else {
-                        field.set(instance, BasicTypeChecker.parseValue(field.getType(), s));
-                    }
-                }
-            }
-        }
-        return instance;
+        return injectField(type, object);
     }
 
     /**
-     * 递归注入字段值
+     * 递归注入字段值 可注入普通字段，基本引用，List类型
      *
      * @param type
      * @param object
      * @return
      * @throws Exception
      */
-    public Object injectField(Class<?> type, JSONObject object) throws Exception {
+    public static Object injectField(Class<?> type, JSONObject object) throws Exception {
         Field[] fields = type.getDeclaredFields();
         if (fields.length < object.keySet().size()) {
             throw new IllegalArgumentException("amount of arguments is more");
@@ -147,13 +107,26 @@ public class BasicReferenceResolver implements ArgumentResolver {
                 Class<?> fieldType = field.getType();
                 field.setAccessible(true);
                 Object s = object.get(name);
-                if (!BasicTypeChecker.isPrimitive(fieldType) && fieldType != String.class) {
+                // 基本引用，不包含集合
+                if (!TypeChecker.isPrimitiveOrString(fieldType) &&
+                        !TypeChecker.checkHasCollection(fieldType)) {
                     if (s != null) {
-                        Object o = injectField(fieldType, JSONObject.fromObject(s));
+                        Object o = injectField(fieldType, (JSONObject) s);
                         field.set(instance, o);
                     }
-                } else {
-                    field.set(instance, BasicTypeChecker.parseValue(fieldType, String.valueOf(s)));
+                } else if (!TypeChecker.isPrimitiveOrString(fieldType)
+                        && TypeChecker.checkHasCollection(fieldType)) {  // 包含集合
+                    if (fieldType == List.class) {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put(LIST, s);
+                        JSONArray array = (JSONArray) jsonObject.get(LIST);
+                        ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+                        Type[] arguments = parameterizedType.getActualTypeArguments();
+                        Object o = handleList(fieldType, array, (Class) arguments[0]);
+                        field.set(instance, o);
+                    }
+                } else {   // 普通字段
+                    field.set(instance, TypeChecker.parseValue(fieldType, String.valueOf(s)));
                 }
             }
         }

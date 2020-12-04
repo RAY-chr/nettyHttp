@@ -13,7 +13,7 @@ import net.sf.json.JSONObject;
 
 import netty.http.annotion.ResponseBody;
 import netty.http.route.RouteMethod;
-import netty.http.utils.BasicTypeChecker;
+import netty.http.utils.TypeChecker;
 import netty.http.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         if (method != null) {
             ResponseBody annotation = method.getAnnotation(ResponseBody.class);
             Class<?> type = method.getReturnType();
-            if (annotation != null && !BasicTypeChecker.isPrimitive(type)) {
+            if (annotation != null && !TypeChecker.isPrimitive(type)) {
                 content_type = APPLICATION_JSON;
             }
             String name = method.getDeclaringClass().getName();

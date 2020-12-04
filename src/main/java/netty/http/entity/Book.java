@@ -39,7 +39,15 @@ public class Book extends Model<Book> {
      */
     private String bookState;
 
-    private Person person;
+    private Info info;
+
+    public Info getInfo() {
+        return info;
+    }
+
+    public void setInfo(Info info) {
+        this.info = info;
+    }
 
     public Integer getBookId() {
         return bookId;
@@ -78,13 +86,7 @@ public class Book extends Model<Book> {
         return this.bookId;
     }
 
-    public Person getPerson() {
-        return person;
-    }
 
-    public void setPerson(Person person) {
-        this.person = person;
-    }
 
     @Override
     public String toString() {

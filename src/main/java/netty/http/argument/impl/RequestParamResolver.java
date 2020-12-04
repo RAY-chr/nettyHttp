@@ -2,7 +2,7 @@ package netty.http.argument.impl;
 
 import netty.http.annotion.RequestParam;
 import netty.http.argument.ArgumentResolver;
-import netty.http.utils.BasicTypeChecker;
+import netty.http.utils.TypeChecker;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -18,13 +18,8 @@ import java.util.Objects;
 public class RequestParamResolver implements ArgumentResolver {
     @Override
     public boolean handle(Class<?> type, Method method, Map<String, List<String>> parameters, int paramIndex) {
-        Annotation[][] annotations = method.getParameterAnnotations();
-        for (Annotation annotation : annotations[paramIndex]) {
-            if (annotation.annotationType().equals(RequestParam.class)) {
-                return true;
-            }
-        }
-        return false;
+        return TypeChecker.checkAnnotation(method, paramIndex, RequestParam.class)
+                && !TypeChecker.checkHasCollection(type);
     }
 
     @Override
@@ -36,7 +31,7 @@ public class RequestParamResolver implements ArgumentResolver {
                 List<String> list = parameters.get(value);
                 Objects.requireNonNull(list, "request binding the method missing required argument: " + value);
                 String s = list.get(0);
-                return BasicTypeChecker.parseValue(type, s);
+                return TypeChecker.parseValue(type, s);
             }
         }
         throw new RuntimeException("method named result must be used after handle");
