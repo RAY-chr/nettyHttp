@@ -1,4 +1,4 @@
-package netty.dao.session;
+package netty.dao.executor;
 
 import netty.dao.DefaultWrapper;
 
@@ -8,9 +8,9 @@ import java.util.List;
 /**
  * @author RAY
  * @descriptions
- * @since 2020/12/6
+ * @since 2020/12/7
  */
-public interface SqlSession {
+public interface SqlExecutor {
 
     void save(Object entity) throws Exception;
 

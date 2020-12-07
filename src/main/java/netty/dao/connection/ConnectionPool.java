@@ -1,5 +1,7 @@
 package netty.dao.connection;
 
+import netty.dao.DBConfig;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.LinkedList;
@@ -12,10 +14,10 @@ import java.util.NoSuchElementException;
  * @since 2020/12/6
  */
 public class ConnectionPool {
-    private static String driverClass = "com.mysql.jdbc.Driver";
-    private static String url = "jdbc:mysql://127.0.0.1:3306/test";
-    private static String userName = "root";
-    private static String password = "root";
+    private static String driverClass = DBConfig.getString("driverClass");
+    private static String url = DBConfig.getString("url");
+    private static String userName = DBConfig.getString("userName");
+    private static String password = DBConfig.getString("password");
     private static final LinkedList<Connection> CONNECTIONS = new LinkedList<>();
     private static boolean init = false;
 

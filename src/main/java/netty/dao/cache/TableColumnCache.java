@@ -8,10 +8,7 @@ import netty.dao.connection.ConnectionPool;
 import netty.http.utils.PackageScanner;
 
 import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,7 +43,13 @@ public class TableColumnCache {
             try {
                 Connection connection = ConnectionPool.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(select + tableName);
-                ResultSet rs = preparedStatement.executeQuery();
+                ResultSet rs = null;
+                try {
+                    rs = preparedStatement.executeQuery();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException("tableName not exist in the database");
+                }
                 ResultSetMetaData metaData = rs.getMetaData();
                 //表列数
                 int size = metaData.getColumnCount();

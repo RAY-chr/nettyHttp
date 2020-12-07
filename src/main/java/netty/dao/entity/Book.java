@@ -1,8 +1,6 @@
 package netty.dao.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 
-import com.baomidou.mybatisplus.extension.activerecord.Model;
 import netty.dao.annotion.TableField;
 import netty.dao.annotion.TableId;
 import netty.dao.annotion.TableName;
