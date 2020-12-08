@@ -17,7 +17,13 @@ public class DefaultWrapper {
 
     public DefaultWrapper eq(String column, Object val) {
         list.add(val);
-        sql.append(column).append(" = ? ").append(" and ");
+        sql.append(column).append(" = ?").append(" and ");
+        return this;
+    }
+
+    public DefaultWrapper like(String column, Object val) {
+        list.add("%" + val + "%");
+        sql.append(column).append(" like ?").append(" and ");
         return this;
     }
 

@@ -5,6 +5,7 @@ import netty.dao.DefaultWrapper;
 import netty.dao.annotion.TableId;
 import netty.dao.cache.TableColumnCache;
 import netty.dao.connection.ConnectionPool;
+import netty.http.utils.TypeChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,8 +13,10 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +27,8 @@ import java.util.Map;
  */
 public abstract class AbstractSqlExecutor implements SqlExecutor {
     private static Logger logger = LoggerFactory.getLogger(AbstractSqlExecutor.class);
+    private Connection transaction;
+    private boolean isBeginTransaction = false;
 
     /**
      * 增加操作
@@ -31,7 +36,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @param entity
      * @throws Exception
      */
-    public void save(Object entity) throws Exception {
+    public int save(Object entity) throws Exception {
         Field[] fields = entity.getClass().getDeclaredFields();
         Object[] params = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
@@ -39,11 +44,31 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             field.setAccessible(true);
             params[i] = field.get(entity);
         }
-        this.executeUpdate(insertSql(entity), params);
+        return this.executeUpdate(insertSql(entity), params);
     }
 
     @Override
-    public void saveBatch(List<?> list) throws Exception {
+    public void beginTransaction() throws Exception {
+        isBeginTransaction = true;
+        transaction = ConnectionPool.getConnection();
+        transaction.setAutoCommit(false);
+    }
+
+    @Override
+    public void commit() throws Exception {
+        transaction.commit();
+        isBeginTransaction = false;
+        transaction.setAutoCommit(true);
+        ConnectionPool.releaseConnection(transaction);
+    }
+
+    @Override
+    public void rollback() throws Exception {
+        transaction.rollback();
+    }
+
+    @Override
+    public int saveBatch(List<?> list) throws Exception {
         Object first = list.get(0);
         Field[] fields = first.getClass().getDeclaredFields();
         List<Object[]> objects = new ArrayList<>();
@@ -56,7 +81,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             }
             objects.add(params);
         }
-        this.executeBatch(insertSql(first), objects);
+        return this.executeBatch(insertSql(first), objects);
     }
 
     /**
@@ -66,17 +91,17 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @param id
      * @throws Exception
      */
-    public void deleteById(Class<?> clazz, Serializable id) throws Exception {
+    public int deleteById(Class<?> clazz, Serializable id) throws Exception {
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         String primarykey = map.get(CommonStr.PRIMARYKEY);
         StringBuffer sql = new StringBuffer("delete from ");
         sql.append(map.get(CommonStr.TABLE)).append(" where ").append(primarykey);
         sql.append(" = ").append("?");
-        this.executeUpdate(sql.toString(), new Object[]{id});
+        return this.executeUpdate(sql.toString(), new Object[]{id});
     }
 
     @Override
-    public void updateById(Object entity) throws Exception {
+    public int updateById(Object entity) throws Exception {
         Class<?> aClass = entity.getClass();
         Map<String, String> map = TableColumnCache.get(aClass.getSimpleName());
         StringBuffer sql = new StringBuffer("update ");
@@ -98,7 +123,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         sql.append("where ").append(map.get(CommonStr.PRIMARYKEY)).append(" = ?");
         primaryField.setAccessible(true);
         params[fields.length - 1] = primaryField.get(entity);
-        this.executeUpdate(sql.toString(), params);
+        return this.executeUpdate(sql.toString(), params);
     }
 
     /**
@@ -108,7 +133,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @param wrapper
      * @throws Exception
      */
-    public void delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
+    public int delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         String primarykey = map.get(CommonStr.PRIMARYKEY);
         StringBuffer sql = new StringBuffer("delete from ");
@@ -119,7 +144,70 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         for (int i = 0; i < wrapper.getValues().size(); i++) {
             params[i] = wrapper.getValues().get(i);
         }
-        this.executeUpdate(sql.toString(), params);
+        return this.executeUpdate(sql.toString(), params);
+    }
+
+    @Override
+    public Object selectById(Class<?> clazz, Serializable id) throws Exception {
+        Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
+        return this.select(clazz, new DefaultWrapper().eq(map.get(CommonStr.PRIMARYKEY), id)).get(0);
+    }
+
+    @Override
+    public List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
+        Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
+        StringBuffer sql = new StringBuffer("select * from ");
+        sql.append(map.get(CommonStr.TABLE));
+        sql.append(wrapper.getSqlString());
+        int size = wrapper.getValues().size();
+        Object[] params = new Object[size];
+        for (int i = 0; i < wrapper.getValues().size(); i++) {
+            params[i] = wrapper.getValues().get(i);
+        }
+        ResultSet resultSet = this.executeQuery(sql.toString(), params);
+        List<Object> list = new ArrayList<>();
+        while (resultSet.next()) {
+            Field[] fields = clazz.getDeclaredFields();
+            Object instance = clazz.newInstance();
+            for (Field field : fields) {
+                Object object;
+                if (field.getAnnotation(TableId.class) == null) {
+                    object = resultSet.getObject(map.get(field.getName()));
+                } else {
+                    object = resultSet.getObject(map.get(CommonStr.PRIMARYKEY));
+                }
+                field.setAccessible(true);
+                field.set(instance, TypeChecker.parseValue(field.getType(), object.toString()));
+            }
+            list.add(instance);
+        }
+        return list;
+    }
+
+    @Override
+    public List<?> selectByIds(Class<?> clazz, Collection<? extends Serializable> idList) throws Exception {
+        Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
+        String primarykey = map.get(CommonStr.PRIMARYKEY);
+        StringBuffer sql = new StringBuffer("select * from ");
+        sql.append(map.get(CommonStr.TABLE)).append(" where ").append(primarykey);
+        sql.append(" =? ");
+        return null;
+
+    }
+
+    /**
+     * 执行查询
+     * @param sql
+     * @param params
+     * @return
+     * @throws Exception
+     */
+    public ResultSet executeQuery(String sql, Object[] params) throws Exception {
+        logger.info("sql -> {}", sql);
+        Connection connection = ConnectionPool.getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        injectParams(preparedStatement, params);
+        return preparedStatement.executeQuery();
     }
 
     /**
@@ -129,17 +217,33 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @param params
      * @throws Exception
      */
-    public void executeUpdate(String sql, Object[] params) throws Exception {
+    public int executeUpdate(String sql, Object[] params) throws Exception {
         logger.info("sql -> {}", sql);
-        Connection connection = ConnectionPool.getConnection();
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        injectParams(preparedStatement, params);
-        preparedStatement.executeUpdate();
-        ConnectionPool.releaseConnection(connection);
-        preparedStatement.close();
+        if (isBeginTransaction) {
+            PreparedStatement preparedStatement = transaction.prepareStatement(sql);
+            injectParams(preparedStatement, params);
+            int update = preparedStatement.executeUpdate();
+            preparedStatement.close();
+            return update;
+        } else {
+            Connection connection = ConnectionPool.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            injectParams(preparedStatement, params);
+            int update = preparedStatement.executeUpdate();
+            ConnectionPool.releaseConnection(connection);
+            preparedStatement.close();
+            return update;
+        }
     }
 
-    public void executeBatch(String sql, List<Object[]> list) throws Exception {
+    /**
+     * 执行批量增删改操作
+     * @param sql
+     * @param list
+     * @return
+     * @throws Exception
+     */
+    public int executeBatch(String sql, List<Object[]> list) throws Exception {
         logger.info("sql -> {}", sql);
         Connection connection = ConnectionPool.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -147,9 +251,10 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             injectParams(preparedStatement, params);
             preparedStatement.addBatch();
         }
-        preparedStatement.executeBatch();
+        int[] updates = preparedStatement.executeBatch();
         ConnectionPool.releaseConnection(connection);
         preparedStatement.close();
+        return updates.length;
     }
 
     /**

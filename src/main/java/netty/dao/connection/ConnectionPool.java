@@ -4,6 +4,8 @@ import netty.dao.DBConfig;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -23,16 +25,22 @@ public class ConnectionPool {
 
     public synchronized static Connection getConnection() throws Exception {
         Connection connection = null;
+        Statement statement = null;
         try {
             connection = CONNECTIONS.removeFirst();
+            statement = connection.createStatement();
         } catch (Exception e) {
             if (e instanceof NoSuchElementException) {
-                for (int i = 0; i < 10; i++) {
+                System.err.println("---------------->>>>>>>> no such <<<<<<<<-------------------");
+                for (int i = 0; i < 30; i++) {
                     CONNECTIONS.add(produce());
                 }
+            }else if (e instanceof SQLException) {
+                reSet();
             }
             return CONNECTIONS.removeFirst();
         }
+        statement.close();
         return connection;
     }
 

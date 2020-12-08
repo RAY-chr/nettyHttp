@@ -12,13 +12,23 @@ import java.util.List;
  */
 public interface SqlSession {
 
-    void save(Object entity) throws Exception;
+    boolean save(Object entity) throws Exception;
 
-    void saveBatch(List<?> list) throws Exception;
+    void beginTransaction() throws Exception;
 
-    void deleteById(Class<?> clazz, Serializable id) throws Exception;
+    void commit() throws Exception;
 
-    void delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
+    void rollback() throws Exception;
 
-    void updateById(Object entity) throws Exception;
+    boolean saveBatch(List<?> list) throws Exception;
+
+    boolean deleteById(Class<?> clazz, Serializable id) throws Exception;
+
+    boolean delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
+
+    boolean updateById(Object entity) throws Exception;
+
+    Object selectById(Class<?> clazz, Serializable id) throws Exception;
+
+    List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
 }

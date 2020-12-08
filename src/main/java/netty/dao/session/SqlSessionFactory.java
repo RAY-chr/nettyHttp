@@ -9,6 +9,14 @@ public class SqlSessionFactory {
     private static final ThreadLocal<SqlSession> session = new ThreadLocal<>();
 
     public static SqlSession openSession() {
+        return new DefaultSqlSession();
+    }
+
+    /**
+     * 这种获得session的方式
+     * @return
+     */
+    public static SqlSession getCurrentSession() {
         if (session.get() == null) {
             session.set(new DefaultSqlSession());
         }

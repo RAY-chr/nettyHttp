@@ -26,6 +26,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author RAY
@@ -42,13 +44,28 @@ public class DefaultSqlSession implements SqlSession {
      * @param entity
      * @throws Exception
      */
-    public void save(Object entity) throws Exception {
-        sqlExecutor.save(entity);
+    public boolean save(Object entity) throws Exception {
+        return sqlExecutor.save(entity) == 1;
     }
 
     @Override
-    public void saveBatch(List<?> list) throws Exception {
-        sqlExecutor.saveBatch(list);
+    public void beginTransaction() throws Exception {
+        sqlExecutor.beginTransaction();
+    }
+
+    @Override
+    public void commit() throws Exception {
+        sqlExecutor.commit();
+    }
+
+    @Override
+    public void rollback() throws Exception {
+        sqlExecutor.rollback();
+    }
+
+    @Override
+    public boolean saveBatch(List<?> list) throws Exception {
+        return sqlExecutor.saveBatch(list) == list.size();
     }
 
     /**
@@ -58,8 +75,8 @@ public class DefaultSqlSession implements SqlSession {
      * @param id
      * @throws Exception
      */
-    public void deleteById(Class<?> clazz, Serializable id) throws Exception {
-        sqlExecutor.deleteById(clazz, id);
+    public boolean deleteById(Class<?> clazz, Serializable id) throws Exception {
+        return sqlExecutor.deleteById(clazz, id) == 1;
     }
 
     /**
@@ -69,8 +86,8 @@ public class DefaultSqlSession implements SqlSession {
      * @throws Exception
      */
     @Override
-    public void updateById(Object entity) throws Exception {
-        sqlExecutor.updateById(entity);
+    public boolean updateById(Object entity) throws Exception {
+        return sqlExecutor.updateById(entity) == 1;
     }
 
     /**
@@ -80,8 +97,18 @@ public class DefaultSqlSession implements SqlSession {
      * @param wrapper
      * @throws Exception
      */
-    public void delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
-        sqlExecutor.delete(clazz, wrapper);
+    public boolean delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
+        return sqlExecutor.delete(clazz, wrapper) > 0;
+    }
+
+    @Override
+    public Object selectById(Class<?> clazz, Serializable id) throws Exception {
+        return sqlExecutor.selectById(clazz, id);
+    }
+
+    @Override
+    public List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
+        return sqlExecutor.select(clazz, wrapper);
     }
 
     public static SqlExecutor getByType() {
@@ -89,22 +116,32 @@ public class DefaultSqlSession implements SqlSession {
     }
 
     public static void main(String[] args) throws Exception {
+        BookDao bookDao = new BookDaoImpl();
+        System.out.println(bookDao.selectById(1));
+        //ExecutorService executorService = Executors.newFixedThreadPool(200);
         SqlSession session = SqlSessionFactory.openSession();
-        List<Book> list = new ArrayList<>();
-        Book book = new Book();
-        book.setBookId(5);
-        book.setBookNo("1003");
-        book.setBookName("fff22");
-        book.setBookState("1");
-        Book book2 = new Book();
-        book2.setBookId(4);
-        book2.setBookNo("1003");
-        book2.setBookName("fff22");
-        book2.setBookState("1");
-        list.add(book);
-        list.add(book2);
-        session.saveBatch(list);
-        //session.save(book);
+        try {
+            //session.beginTransaction();
+            List<Book> list = new ArrayList<>();
+            for (int i = 3; i < 800; i++) {
+                Book book = new Book();
+                book.setBookId(i);
+                book.setBookNo("100"+i);
+                list.add(book);
+            }
+            //System.out.println(session.saveBatch(list));
+            //executorService.shutdown();
+            List<?> book_id = session.select(Book.class,
+                    new DefaultWrapper().eq("book_state", 1)
+                                        .like("book_name", "数"));
+            System.out.println(book_id);
+            System.out.println(session.selectById(Book.class, 1));
+
+            //session.commit();
+        } catch (Exception e) {
+            //session.rollback();
+            //e.printStackTrace();
+        }
         //Renter fggg = new Renter("3", "fggg");
         //session.save(fggg);
         //session.deleteById(Book.class, 5);

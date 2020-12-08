@@ -3,6 +3,7 @@ package netty.dao.dao;
 import netty.dao.DefaultWrapper;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author RAY
@@ -15,4 +16,8 @@ public interface BaseDao<T> {
     void deleteById(Serializable id) throws Exception;
 
     void delete(DefaultWrapper wrapper) throws Exception;
+
+    T selectById(Serializable id) throws Exception;
+
+    List<T> select(DefaultWrapper wrapper) throws Exception;
 }

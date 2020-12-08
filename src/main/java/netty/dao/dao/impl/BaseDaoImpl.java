@@ -9,6 +9,7 @@ import netty.dao.session.SqlSessionFactory;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
 
 /**
  * @author RAY
@@ -18,6 +19,7 @@ import java.lang.reflect.Type;
 public class BaseDaoImpl<T> implements BaseDao<T> {
 
     private Class clazz;
+    private SqlSession session = SqlSessionFactory.openSession();
 
     public BaseDaoImpl() {
         Type type = this.getClass().getGenericSuperclass();
@@ -30,19 +32,26 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
 
     @Override
     public void save(T t) throws Exception {
-        SqlSession session = SqlSessionFactory.openSession();
         session.save(t);
     }
 
     @Override
     public void deleteById(Serializable id) throws Exception {
-        SqlSession session = SqlSessionFactory.openSession();
         session.deleteById(clazz, id);
     }
 
     @Override
     public void delete(DefaultWrapper wrapper) throws Exception {
-        SqlSession session = SqlSessionFactory.openSession();
         session.delete(clazz, wrapper);
+    }
+
+    @Override
+    public T selectById(Serializable id) throws Exception {
+        return (T) session.selectById(clazz, id);
+    }
+
+    @Override
+    public List<T> select(DefaultWrapper wrapper) throws Exception {
+        return (List<T>) session.select(clazz, wrapper);
     }
 }
