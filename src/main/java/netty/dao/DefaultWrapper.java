@@ -3,6 +3,7 @@ package netty.dao;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -12,33 +13,109 @@ import java.util.function.Supplier;
  * @since 2020/12/6
  */
 public class DefaultWrapper {
-    private StringBuffer sql = new StringBuffer(" where ");
-    private List<Object> list = new ArrayList<>();
+    private StringBuffer sql = new StringBuffer();
+    private StringBuffer whereSql = new StringBuffer(" where ");
+    private StringBuffer groupBySql = new StringBuffer(" group by ");
+    private StringBuffer orderBySql = new StringBuffer(" order by ");
+    private StringBuffer limitSql = new StringBuffer(" limit ");
+    private List<Object> whereList = new ArrayList<>();
+    private boolean isSqlFinish = false;
 
     public DefaultWrapper eq(String column, Object val) {
-        list.add(val);
-        sql.append(column).append(" = ?").append(" and ");
+        whereList.add(val);
+        whereSql.append(column).append(" = ?").append(" and ");
         return this;
     }
 
     public DefaultWrapper like(String column, Object val) {
-        list.add("%" + val + "%");
-        sql.append(column).append(" like ?").append(" and ");
+        whereList.add("%" + val + "%");
+        whereSql.append(column).append(" like ?").append(" and ");
+        return this;
+    }
+
+    public DefaultWrapper gt(String column, Object val) {
+        whereList.add(val);
+        whereSql.append(column).append(" > ?").append(" and ");
+        return this;
+    }
+
+    public DefaultWrapper ge(String column, Object val) {
+        whereList.add(val);
+        whereSql.append(column).append(" >= ?").append(" and ");
+        return this;
+    }
+
+    public DefaultWrapper groupBy(String... column) {
+        List<String> list = Arrays.asList(column);
+        for (String s : list) {
+            groupBySql.append(s).append(", ");
+        }
+        return this;
+    }
+
+    /**
+     * 默认为升序
+     *
+     * @param column
+     * @return
+     */
+    public DefaultWrapper orderBy(String... column) {
+        List<String> list = Arrays.asList(column);
+        for (String s : list) {
+            orderBySql.append(s).append(" asc").append(", ");
+        }
+        return this;
+    }
+
+    public DefaultWrapper orderDesc(String... column) {
+        List<String> list = Arrays.asList(column);
+        for (String s : list) {
+            orderBySql.append(s).append(" desc").append(", ");
+        }
+        return this;
+    }
+
+    /**
+     * limit是最后调的，否则会出错
+     * @param index
+     * @param size
+     * @return
+     */
+    public DefaultWrapper limit(int index, int size) {
+        whereList.add(index);
+        whereList.add(size);
+        limitSql.append("?").append(",").append("?").append(", ");
         return this;
     }
 
     public String getSqlString() {
-        int and = sql.lastIndexOf(" and ");
-        return sql.substring(0, and);
+        if (!isSqlFinish) {
+            int and = whereSql.lastIndexOf(" and ");
+            int group = groupBySql.lastIndexOf(",");
+            int order = orderBySql.lastIndexOf(",");
+            int limit = limitSql.lastIndexOf(",");
+            sql.append(and > 0 ? whereSql.substring(0, and) : "");
+            sql.append(group > 0 ? groupBySql.substring(0, group) : "");
+            sql.append(order > 0 ? orderBySql.substring(0, order) : "");
+            sql.append(order > 0 ? limitSql.substring(0, limit) : "");
+            isSqlFinish = true;
+            whereSql = null;
+            groupBySql = null;
+            orderBySql = null;
+            limitSql = null;
+        }
+        return sql.toString();
     }
 
     public List<Object> getValues() {
-        return list;
+        return whereList;
     }
 
     public static void main(String[] args) {
         DefaultWrapper defaultWrapper = new DefaultWrapper();
-        defaultWrapper.eq("book_id", 2).eq("book_name", "333");
+        defaultWrapper.eq("book_id", 2).eq("book_name", "333")
+                .gt("book_state", 0).groupBy("book_id", "book_name").orderBy("book_id", "book_no")
+                .orderDesc("date").limit(0, 3);
         System.out.println(defaultWrapper.getSqlString());
     }
 

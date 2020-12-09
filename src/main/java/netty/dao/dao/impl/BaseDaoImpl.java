@@ -19,7 +19,6 @@ import java.util.List;
 public class BaseDaoImpl<T> implements BaseDao<T> {
 
     private Class clazz;
-    private SqlSession session = SqlSessionFactory.openSession();
 
     public BaseDaoImpl() {
         Type type = this.getClass().getGenericSuperclass();
@@ -32,26 +31,30 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
 
     @Override
     public void save(T t) throws Exception {
-        session.save(t);
+        this.getSession().save(t);
     }
 
     @Override
     public void deleteById(Serializable id) throws Exception {
-        session.deleteById(clazz, id);
+        this.getSession().deleteById(clazz, id);
     }
 
     @Override
     public void delete(DefaultWrapper wrapper) throws Exception {
-        session.delete(clazz, wrapper);
+        this.getSession().delete(clazz, wrapper);
     }
 
     @Override
     public T selectById(Serializable id) throws Exception {
-        return (T) session.selectById(clazz, id);
+        return (T) this.getSession().selectById(clazz, id);
     }
 
     @Override
     public List<T> select(DefaultWrapper wrapper) throws Exception {
-        return (List<T>) session.select(clazz, wrapper);
+        return (List<T>) this.getSession().select(clazz, wrapper);
+    }
+
+    public SqlSession getSession() {
+        return SqlSessionFactory.getCurrentSession();
     }
 }

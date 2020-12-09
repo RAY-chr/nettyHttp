@@ -16,7 +16,7 @@ import java.util.Map;
 public class BasicResolver implements ArgumentResolver {
     @Override
     public boolean handle(Class<?> type, Method method, Map<String, List<String>> parameters, int paramIndex) {
-        if (TypeChecker.isPrimitiveOrString(type) && !TypeChecker.checkHasCollection(type)) {
+        if (TypeChecker.isPrimitiveOrString(type) ) {
             Parameter[] methodParameters = method.getParameters();
             Parameter parameter = methodParameters[paramIndex];
             return parameters.containsKey(parameter.getName());

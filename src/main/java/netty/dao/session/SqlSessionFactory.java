@@ -13,7 +13,8 @@ public class SqlSessionFactory {
     }
 
     /**
-     * 这种获得session的方式
+     * 这种获得session的方式需要及时清除
+     *
      * @return
      */
     public static SqlSession getCurrentSession() {
@@ -21,6 +22,13 @@ public class SqlSessionFactory {
             session.set(new DefaultSqlSession());
         }
         return session.get();
+    }
+
+    public static void closeCurrentSession() {
+        SqlSession sqlSession = SqlSessionFactory.session.get();
+        if (sqlSession != null) {
+            session.remove();
+        }
     }
 
 

@@ -1,5 +1,7 @@
 package netty.http.controller;
 
+import netty.dao.dao.BookDao;
+import netty.dao.dao.impl.BookDaoImpl;
 import netty.http.annotion.RequestBody;
 import netty.http.annotion.RequestMapping;
 import netty.http.annotion.RequestParam;
@@ -25,7 +27,12 @@ public class TestController {
      * @return
      */
     @RequestMapping("/test")
-    public String test(@RequestParam("code") String code2, long x, @RequestParam("info") String info2) {
+    public String test(@RequestParam("code") String code2, @RequestParam("x")long x, @RequestParam("info") String info2) throws Exception {
+        long l = System.currentTimeMillis();
+        BookDaoImpl bookDao = new BookDaoImpl();
+        List<netty.dao.entity.Book> books = bookDao.select(null);
+        System.out.println(books);
+        System.out.println(System.currentTimeMillis()-l);
         return "hello " + code2 + " " + (x == 0 ? "" : x) + " " + info2;
     }
 
@@ -41,7 +48,8 @@ public class TestController {
     }
 
     /**
-     * json 传入一段json字符串 用String接收 最前面的json字符串key要么
+     * json 传入一段json字符串 用String接收 最前面的json字符串key要么等于 RequestParam的值
+     *      要么等于形参
      * @param ff
      * @return
      */

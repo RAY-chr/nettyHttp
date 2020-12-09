@@ -3,10 +3,13 @@ package netty.http.utils;
 import com.alibaba.druid.sql.visitor.functions.Char;
 import netty.http.annotion.RequestParam;
 
+import javax.lang.model.element.VariableElement;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +22,8 @@ import java.util.Set;
  */
 public class TypeChecker {
     private static final Set<Class<?>> checker = new HashSet<>();
+    // 从数据库返回的时间是这种时间戳
+    private static DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.0");
 
 
     /**
@@ -113,6 +118,8 @@ public class TypeChecker {
             return Byte.parseByte(value);
         } else if (type.equals(BigDecimal.class)) {
             return new BigDecimal(value);
+        }else if (type.equals(LocalDateTime.class)) {
+            return LocalDateTime.parse(value, dateTimeFormatter);
         }
 
         return null;

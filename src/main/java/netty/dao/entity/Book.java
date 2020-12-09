@@ -7,6 +7,8 @@ import netty.dao.annotion.TableName;
 import netty.http.entity.Info;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -45,6 +47,22 @@ public class Book {
     @TableField("book_state")
     private String bookState;
 
+    public Book() {
+    }
+
+    public Book(Integer bookId) {
+        this.bookId = bookId;
+    }
+
+    private LocalDateTime date;
+
+    public LocalDateTime getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDateTime date) {
+        this.date = date;
+    }
 
     public Integer getBookId() {
         return bookId;
@@ -80,11 +98,13 @@ public class Book {
 
     @Override
     public String toString() {
-        return "Book{" +
-                "bookId=" + bookId +
-                ", bookNo=" + bookNo +
-                ", bookName=" + bookName +
-                ", bookState=" + bookState +
-                "}";
+        final StringBuffer sb = new StringBuffer("Book{");
+        sb.append("bookId=").append(bookId);
+        sb.append(", bookNo='").append(bookNo).append('\'');
+        sb.append(", bookName='").append(bookName).append('\'');
+        sb.append(", bookState='").append(bookState).append('\'');
+        sb.append(", date=").append(date);
+        sb.append('}');
+        return sb.toString();
     }
 }

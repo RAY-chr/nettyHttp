@@ -98,11 +98,25 @@ public class BasicReferenceResolver implements ArgumentResolver {
     public static Object injectField(Class<?> type, JSONObject object) throws Exception {
         Field[] fields = type.getDeclaredFields();
         if (fields.length < object.keySet().size()) {
-            throw new IllegalArgumentException("amount of arguments is more");
+            // 校验多余的参数
+            Set set = object.keySet();
+            Object[] objects = set.toArray();
+            Set<Object> objectSet = new HashSet<>();
+            for (Object o : objects) {
+                objectSet.add(o);
+            }
+            for (Field field : fields) {
+                if (objectSet.contains(field.getName())) {
+                    objectSet.remove(field.getName());
+                }
+            }
+            throw new IllegalArgumentException("amount of arguments is more -> " + objectSet);
         }
         Object instance = type.newInstance();
+        Set<Object> set = new HashSet<>();
         for (Field field : fields) {
             String name = field.getName();
+            set.add(name);
             if (object.containsKey(name)) {
                 Class<?> fieldType = field.getType();
                 field.setAccessible(true);
@@ -128,6 +142,12 @@ public class BasicReferenceResolver implements ArgumentResolver {
                 } else {   // 普通字段
                     field.set(instance, TypeChecker.parseValue(fieldType, String.valueOf(s)));
                 }
+            }
+        }
+        // 校验不存在的参数
+        for (Object s : object.keySet()) {
+            if (!set.contains(s)) {
+                throw new IllegalArgumentException("arguments: [" + s + "] not exist");
             }
         }
         return instance;

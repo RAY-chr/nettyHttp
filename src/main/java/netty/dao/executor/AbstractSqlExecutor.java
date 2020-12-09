@@ -15,10 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author RAY
@@ -37,6 +34,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws Exception
      */
     public int save(Object entity) throws Exception {
+        Objects.requireNonNull(entity, "the entity cat't be null");
         Field[] fields = entity.getClass().getDeclaredFields();
         Object[] params = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
@@ -69,6 +67,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
 
     @Override
     public int saveBatch(List<?> list) throws Exception {
+        Objects.requireNonNull(list, "the list cat't be null");
+        Objects.requireNonNull(list.get(0), "the list'size cat't be null");
         Object first = list.get(0);
         Field[] fields = first.getClass().getDeclaredFields();
         List<Object[]> objects = new ArrayList<>();
@@ -92,6 +92,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws Exception
      */
     public int deleteById(Class<?> clazz, Serializable id) throws Exception {
+        Objects.requireNonNull(id, "the id cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         String primarykey = map.get(CommonStr.PRIMARYKEY);
         StringBuffer sql = new StringBuffer("delete from ");
@@ -102,6 +103,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
 
     @Override
     public int updateById(Object entity) throws Exception {
+        Objects.requireNonNull(entity, "the entity cat't be null");
         Class<?> aClass = entity.getClass();
         Map<String, String> map = TableColumnCache.get(aClass.getSimpleName());
         StringBuffer sql = new StringBuffer("update ");
@@ -134,6 +136,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws Exception
      */
     public int delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
+        Objects.requireNonNull(wrapper, "the wrapper cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         String primarykey = map.get(CommonStr.PRIMARYKEY);
         StringBuffer sql = new StringBuffer("delete from ");
@@ -149,6 +152,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
 
     @Override
     public Object selectById(Class<?> clazz, Serializable id) throws Exception {
+        Objects.requireNonNull(id, "the id cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         return this.select(clazz, new DefaultWrapper().eq(map.get(CommonStr.PRIMARYKEY), id)).get(0);
     }
@@ -157,12 +161,17 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     public List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         StringBuffer sql = new StringBuffer("select * from ");
+        Object[] params = null;
         sql.append(map.get(CommonStr.TABLE));
-        sql.append(wrapper.getSqlString());
-        int size = wrapper.getValues().size();
-        Object[] params = new Object[size];
-        for (int i = 0; i < wrapper.getValues().size(); i++) {
-            params[i] = wrapper.getValues().get(i);
+        if (wrapper != null) {
+            sql.append(wrapper.getSqlString());
+        }
+        if (wrapper != null && wrapper.getValues().size() > 0) {
+            int size = wrapper.getValues().size();
+            params = new Object[size];
+            for (int i = 0; i < wrapper.getValues().size(); i++) {
+                params[i] = wrapper.getValues().get(i);
+            }
         }
         ResultSet resultSet = this.executeQuery(sql.toString(), params);
         List<Object> list = new ArrayList<>();
@@ -177,7 +186,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
                     object = resultSet.getObject(map.get(CommonStr.PRIMARYKEY));
                 }
                 field.setAccessible(true);
-                field.set(instance, TypeChecker.parseValue(field.getType(), object.toString()));
+                field.set(instance, TypeChecker.parseValue(field.getType(),
+                        object == null ? null : object.toString()));
             }
             list.add(instance);
         }
@@ -197,6 +207,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
 
     /**
      * 执行查询
+     *
      * @param sql
      * @param params
      * @return
@@ -238,6 +249,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
 
     /**
      * 执行批量增删改操作
+     *
      * @param sql
      * @param list
      * @return
@@ -265,14 +277,16 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws SQLException
      */
     public void injectParams(PreparedStatement preparedStatement, Object[] params) throws SQLException {
-        StringBuffer buffer = new StringBuffer();
-        for (Object param : params) {
-            buffer.append(String.valueOf(param)).append(", ");
-        }
-        buffer.setCharAt(buffer.lastIndexOf(","), ' ');
-        logger.info("params -> {}", buffer.toString());
-        for (int i = 0; i < params.length; i++) {
-            preparedStatement.setObject(i + 1, params[i]);
+        if (params != null) {
+            StringBuffer buffer = new StringBuffer();
+            for (Object param : params) {
+                buffer.append(String.valueOf(param)).append(", ");
+            }
+            buffer.setCharAt(buffer.lastIndexOf(","), ' ');
+            logger.info("params -> {}", buffer.toString());
+            for (int i = 0; i < params.length; i++) {
+                preparedStatement.setObject(i + 1, params[i]);
+            }
         }
     }
 

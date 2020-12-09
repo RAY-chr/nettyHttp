@@ -23,6 +23,8 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.security.AlgorithmConstraints;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -114,42 +116,5 @@ public class DefaultSqlSession implements SqlSession {
     public static SqlExecutor getByType() {
         return SqlExecutorFactory.getSqlExecutor(DBConfig.getString("dbType"));
     }
-
-    public static void main(String[] args) throws Exception {
-        BookDao bookDao = new BookDaoImpl();
-        System.out.println(bookDao.selectById(1));
-        //ExecutorService executorService = Executors.newFixedThreadPool(200);
-        SqlSession session = SqlSessionFactory.openSession();
-        try {
-            //session.beginTransaction();
-            List<Book> list = new ArrayList<>();
-            for (int i = 3; i < 800; i++) {
-                Book book = new Book();
-                book.setBookId(i);
-                book.setBookNo("100"+i);
-                list.add(book);
-            }
-            //System.out.println(session.saveBatch(list));
-            //executorService.shutdown();
-            List<?> book_id = session.select(Book.class,
-                    new DefaultWrapper().eq("book_state", 1)
-                                        .like("book_name", "数"));
-            System.out.println(book_id);
-            System.out.println(session.selectById(Book.class, 1));
-
-            //session.commit();
-        } catch (Exception e) {
-            //session.rollback();
-            //e.printStackTrace();
-        }
-        //Renter fggg = new Renter("3", "fggg");
-        //session.save(fggg);
-        //session.deleteById(Book.class, 5);
-        //BookDao dao = new BookDaoImpl();
-        //dao.save(book);
-        //dao.deleteById(5);
-        //dao.delete(new DefaultWrapper().eq("book_id", 5).eq("book_name", "fff"));
-    }
-
 
 }
