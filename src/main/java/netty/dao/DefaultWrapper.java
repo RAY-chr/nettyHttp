@@ -45,6 +45,12 @@ public class DefaultWrapper {
         return this;
     }
 
+    public DefaultWrapper or() {
+        int index = whereSql.lastIndexOf(" and ");
+        whereSql.replace(index, index + 5, " or ");
+        return this;
+    }
+
     public DefaultWrapper groupBy(String... column) {
         List<String> list = Arrays.asList(column);
         for (String s : list) {
@@ -77,6 +83,7 @@ public class DefaultWrapper {
 
     /**
      * limit是最后调的，否则会出错
+     *
      * @param index
      * @param size
      * @return
@@ -97,7 +104,7 @@ public class DefaultWrapper {
             sql.append(and > 0 ? whereSql.substring(0, and) : "");
             sql.append(group > 0 ? groupBySql.substring(0, group) : "");
             sql.append(order > 0 ? orderBySql.substring(0, order) : "");
-            sql.append(order > 0 ? limitSql.substring(0, limit) : "");
+            sql.append(limit > 0 ? limitSql.substring(0, limit) : "");
             isSqlFinish = true;
             whereSql = null;
             groupBySql = null;
@@ -113,7 +120,7 @@ public class DefaultWrapper {
 
     public static void main(String[] args) {
         DefaultWrapper defaultWrapper = new DefaultWrapper();
-        defaultWrapper.eq("book_id", 2).eq("book_name", "333")
+        defaultWrapper.eq("book_id", 2).or().eq("book_name", "333")
                 .gt("book_state", 0).groupBy("book_id", "book_name").orderBy("book_id", "book_no")
                 .orderDesc("date").limit(0, 3);
         System.out.println(defaultWrapper.getSqlString());

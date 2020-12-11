@@ -3,7 +3,6 @@ package netty.dao.executor;
 import netty.dao.DefaultWrapper;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -33,5 +32,4 @@ public interface SqlExecutor {
 
     List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
 
-    List<?> selectByIds(Class<?> clazz, Collection<? extends Serializable> idList) throws Exception;
 }

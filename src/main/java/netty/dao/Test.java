@@ -14,7 +14,19 @@ import java.util.List;
  */
 public class Test {
 
-    BookDao dao = ProxyDao.getDao(BookDao.class, new BookDaoImpl());
+    static BookDao dao = ProxyDao.getDao(BookDao.class, new BookDaoImpl());
+
+    public static void main(String[] args) throws Exception {
+        dao.testTran();
+        new Thread(()-> {
+            try {
+                List<Book> books = dao.select(null);
+                books.forEach(System.out::println);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
 
     /**
      * 测试事务回滚
@@ -24,6 +36,14 @@ public class Test {
     @org.junit.Test
     public void demo1() throws Exception {
         dao.testTran();
+        new Thread(()-> {
+            try {
+                List<Book> books = dao.select(null);
+                System.out.println(books.size());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     @org.junit.Test
@@ -31,5 +51,6 @@ public class Test {
         List<Book> books = dao.select(new DefaultWrapper().groupBy("book_state", "book_id")
                 .orderBy("book_id").eq("book_state",1).limit(0,3));
         books.forEach(System.out::println);
+        System.out.println(dao.selectById(4));
     }
 }

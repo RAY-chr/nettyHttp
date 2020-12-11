@@ -68,7 +68,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     @Override
     public int saveBatch(List<?> list) throws Exception {
         Objects.requireNonNull(list, "the list cat't be null");
-        Objects.requireNonNull(list.get(0), "the list'size cat't be null");
+        Objects.requireNonNull(list.size() > 0 ? list.size() : null, "the list'size cat't be 0");
         Object first = list.get(0);
         Field[] fields = first.getClass().getDeclaredFields();
         List<Object[]> objects = new ArrayList<>();
@@ -154,7 +154,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     public Object selectById(Class<?> clazz, Serializable id) throws Exception {
         Objects.requireNonNull(id, "the id cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
-        return this.select(clazz, new DefaultWrapper().eq(map.get(CommonStr.PRIMARYKEY), id)).get(0);
+        List<?> list = this.select(clazz, new DefaultWrapper().eq(map.get(CommonStr.PRIMARYKEY), id));
+        return list.size() == 1 ? list.get(0) : null;
     }
 
     @Override
@@ -173,7 +174,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
                 params[i] = wrapper.getValues().get(i);
             }
         }
-        ResultSet resultSet = this.executeQuery(sql.toString(), params);
+        DBElement dbElement = this.executeQuery(sql.toString(), params);
+        ResultSet resultSet = dbElement.getResultSet();
         List<Object> list = new ArrayList<>();
         while (resultSet.next()) {
             Field[] fields = clazz.getDeclaredFields();
@@ -191,18 +193,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             }
             list.add(instance);
         }
+        dbElement.getPreparedStatement().close();
         return list;
-    }
-
-    @Override
-    public List<?> selectByIds(Class<?> clazz, Collection<? extends Serializable> idList) throws Exception {
-        Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
-        String primarykey = map.get(CommonStr.PRIMARYKEY);
-        StringBuffer sql = new StringBuffer("select * from ");
-        sql.append(map.get(CommonStr.TABLE)).append(" where ").append(primarykey);
-        sql.append(" =? ");
-        return null;
-
     }
 
     /**
@@ -213,12 +205,16 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @return
      * @throws Exception
      */
-    public ResultSet executeQuery(String sql, Object[] params) throws Exception {
+    public DBElement executeQuery(String sql, Object[] params) throws Exception {
         logger.info("sql -> {}", sql);
         Connection connection = ConnectionPool.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         injectParams(preparedStatement, params);
-        return preparedStatement.executeQuery();
+        ResultSet resultSet = preparedStatement.executeQuery();
+        // 直接关闭，结果集获取会出现错误
+        //preparedStatement.close();
+        ConnectionPool.releaseConnection(connection);
+        return new DBElement(resultSet, preparedStatement);
     }
 
     /**

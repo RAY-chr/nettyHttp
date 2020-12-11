@@ -25,7 +25,7 @@ public class SqlSessionFactory {
     }
 
     public static void closeCurrentSession() {
-        SqlSession sqlSession = SqlSessionFactory.session.get();
+        SqlSession sqlSession = session.get();
         if (sqlSession != null) {
             session.remove();
         }

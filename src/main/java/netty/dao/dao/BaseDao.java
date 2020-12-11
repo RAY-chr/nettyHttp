@@ -11,11 +11,15 @@ import java.util.List;
  * @since 2020/12/6
  */
 public interface BaseDao<T> {
-    void save(T t) throws Exception;
+    boolean save(T t) throws Exception;
 
-    void deleteById(Serializable id) throws Exception;
+    boolean saveBatch(List<T> list) throws Exception;
 
-    void delete(DefaultWrapper wrapper) throws Exception;
+    boolean deleteById(Serializable id) throws Exception;
+
+    boolean delete(DefaultWrapper wrapper) throws Exception;
+
+    boolean updateById(T t) throws Exception;
 
     T selectById(Serializable id) throws Exception;
 

@@ -30,8 +30,9 @@ public class ProxyDao {
                             invoke = method.invoke(object, args);
                             session.commit();
                         } catch (Exception e) {
+                            e.printStackTrace();
                             session.rollback();
-                            logger.error("{} occurs mistake, rollback", method);
+                            logger.error("[{}] occurs mistake, rollback", method);
                         }finally {
                             SqlSessionFactory.closeCurrentSession();
                         }

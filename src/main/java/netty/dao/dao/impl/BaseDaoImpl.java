@@ -19,6 +19,7 @@ import java.util.List;
 public class BaseDaoImpl<T> implements BaseDao<T> {
 
     private Class clazz;
+    private SqlSession selectSession = SqlSessionFactory.openSession();
 
     public BaseDaoImpl() {
         Type type = this.getClass().getGenericSuperclass();
@@ -30,28 +31,38 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
     }
 
     @Override
-    public void save(T t) throws Exception {
-        this.getSession().save(t);
+    public boolean save(T t) throws Exception {
+        return this.getSession().save(t);
     }
 
     @Override
-    public void deleteById(Serializable id) throws Exception {
-        this.getSession().deleteById(clazz, id);
+    public boolean saveBatch(List<T> list) throws Exception {
+        return this.getSession().saveBatch(list);
     }
 
     @Override
-    public void delete(DefaultWrapper wrapper) throws Exception {
-        this.getSession().delete(clazz, wrapper);
+    public boolean deleteById(Serializable id) throws Exception {
+        return this.getSession().deleteById(clazz, id);
+    }
+
+    @Override
+    public boolean delete(DefaultWrapper wrapper) throws Exception {
+        return this.getSession().delete(clazz, wrapper);
+    }
+
+    @Override
+    public boolean updateById(T t) throws Exception {
+        return this.getSession().updateById(t);
     }
 
     @Override
     public T selectById(Serializable id) throws Exception {
-        return (T) this.getSession().selectById(clazz, id);
+        return (T) selectSession.selectById(clazz, id);
     }
 
     @Override
     public List<T> select(DefaultWrapper wrapper) throws Exception {
-        return (List<T>) this.getSession().select(clazz, wrapper);
+        return (List<T>) selectSession.select(clazz, wrapper);
     }
 
     public SqlSession getSession() {

@@ -1,5 +1,6 @@
 package netty.dao.entity;
 
+import netty.dao.annotion.TableId;
 import netty.dao.annotion.TableName;
 
 /**
@@ -10,6 +11,7 @@ import netty.dao.annotion.TableName;
 @TableName("renter")
 public class Renter {
 
+    @TableId("renter_id")
     private String renter_id;
     private String renter_name;
 

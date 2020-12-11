@@ -4,10 +4,7 @@ package netty.dao.entity;
 import netty.dao.annotion.TableField;
 import netty.dao.annotion.TableId;
 import netty.dao.annotion.TableName;
-import netty.http.entity.Info;
 
-import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -60,8 +57,9 @@ public class Book {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
+    public Book setDate(LocalDateTime date) {
         this.date = date;
+        return this;
     }
 
     public Integer getBookId() {
