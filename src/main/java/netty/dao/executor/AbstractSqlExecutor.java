@@ -5,6 +5,7 @@ import netty.dao.DefaultWrapper;
 import netty.dao.annotion.TableId;
 import netty.dao.cache.TableColumnCache;
 import netty.dao.connection.ConnectionPool;
+import netty.dao.page.Page;
 import netty.http.utils.TypeChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,32 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     private static Logger logger = LoggerFactory.getLogger(AbstractSqlExecutor.class);
     private Connection transaction;
     private boolean isBeginTransaction = false;
+
+    @Override
+    public long count(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
+        Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
+        StringBuffer sql = new StringBuffer("select count(*) from ");
+        sql.append(map.get(CommonStr.TABLE));
+        Object[] params = null;
+        if (wrapper != null) {
+            sql.append(wrapper.getSqlString());
+            int size = wrapper.getValues().size();
+            if (size > 0) {
+                params = new Object[size];
+                for (int i = 0; i < wrapper.getValues().size(); i++) {
+                    params[i] = wrapper.getValues().get(i);
+                }
+            }
+        }
+        DBElement dbElement = this.executeQuery(sql.toString(), params);
+        ResultSet resultSet = dbElement.getResultSet();
+        int count = 0;
+        while (resultSet.next()) {
+            count = resultSet.getInt(1);
+        }
+        dbElement.getPreparedStatement().close();
+        return count;
+    }
 
     /**
      * 增加操作
@@ -196,6 +223,9 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         dbElement.getPreparedStatement().close();
         return list;
     }
+
+    @Override
+    public abstract Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception;
 
     /**
      * 执行查询

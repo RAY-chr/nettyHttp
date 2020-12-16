@@ -42,7 +42,8 @@ public class TableColumnCache {
             }
             try {
                 Connection connection = ConnectionPool.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(select + tableName);
+                PreparedStatement preparedStatement = connection.prepareStatement(select + tableName
+                        + " limit 0,1");
                 ResultSet rs = null;
                 try {
                     rs = preparedStatement.executeQuery();

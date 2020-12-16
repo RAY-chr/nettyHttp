@@ -13,6 +13,7 @@ import netty.dao.entity.Renter;
 import netty.dao.executor.MysqlExecutor;
 import netty.dao.executor.SqlExecutor;
 import netty.dao.executor.SqlExecutorFactory;
+import netty.dao.page.Page;
 import netty.http.HttpServerHandler;
 import org.apache.ibatis.jdbc.SQL;
 import org.slf4j.Logger;
@@ -111,6 +112,11 @@ public class DefaultSqlSession implements SqlSession {
     @Override
     public List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
         return sqlExecutor.select(clazz, wrapper);
+    }
+
+    @Override
+    public Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception {
+        return sqlExecutor.selectPage(clazz, page, wrapper);
     }
 
     public static SqlExecutor getByType() {

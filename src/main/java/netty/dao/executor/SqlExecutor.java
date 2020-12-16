@@ -1,6 +1,7 @@
 package netty.dao.executor;
 
 import netty.dao.DefaultWrapper;
+import netty.dao.page.Page;
 
 import java.io.Serializable;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
  * @since 2020/12/7
  */
 public interface SqlExecutor {
+    long count(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
 
     int save(Object entity) throws Exception;
 
@@ -31,5 +33,7 @@ public interface SqlExecutor {
     Object selectById(Class<?> clazz, Serializable id) throws Exception;
 
     List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
+
+    Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception;
 
 }

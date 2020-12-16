@@ -1,6 +1,7 @@
 package netty.dao.session;
 
 import netty.dao.DefaultWrapper;
+import netty.dao.page.Page;
 
 import java.io.Serializable;
 import java.util.List;
@@ -31,4 +32,6 @@ public interface SqlSession {
     Object selectById(Class<?> clazz, Serializable id) throws Exception;
 
     List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
+
+    Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception;
 }

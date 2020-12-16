@@ -1,6 +1,7 @@
 package netty.dao.dao;
 
 import netty.dao.DefaultWrapper;
+import netty.dao.page.Page;
 
 import java.io.Serializable;
 import java.util.List;
@@ -24,4 +25,6 @@ public interface BaseDao<T> {
     T selectById(Serializable id) throws Exception;
 
     List<T> select(DefaultWrapper wrapper) throws Exception;
+
+    Page<T> selectPage(Page<T> page, DefaultWrapper wrapper) throws Exception;
 }

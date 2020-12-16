@@ -20,6 +20,11 @@ public class DefaultWrapper {
     private StringBuffer limitSql = new StringBuffer(" limit ");
     private List<Object> whereList = new ArrayList<>();
     private boolean isSqlFinish = false;
+    private boolean limit = false;
+
+    public boolean isLimit() {
+        return limit;
+    }
 
     public DefaultWrapper eq(String column, Object val) {
         whereList.add(val);
@@ -82,16 +87,19 @@ public class DefaultWrapper {
     }
 
     /**
-     * limit是最后调的，否则会出错
+     *
      *
      * @param index
      * @param size
      * @return
      */
-    public DefaultWrapper limit(int index, int size) {
-        whereList.add(index);
-        whereList.add(size);
-        limitSql.append("?").append(",").append("?").append(", ");
+    public DefaultWrapper limit(long index, long size) {
+        if (!limit) {
+            whereList.add(index);
+            whereList.add(size);
+            limitSql.append("?").append(",").append("?").append(", ");
+            limit = true;
+        }
         return this;
     }
 
