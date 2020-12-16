@@ -35,11 +35,16 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         sql.append(map.get(CommonStr.TABLE));
         Object[] params = null;
         if (wrapper != null) {
-            sql.append(wrapper.getSqlString());
+            String sqlString = wrapper.getSqlString();
             int size = wrapper.getValues().size();
+            if (sqlString.contains("limit")) {
+                sqlString = sqlString.substring(0, sqlString.indexOf("limit"));
+                size = size - 2;
+            }
+            sql.append(sqlString);
             if (size > 0) {
                 params = new Object[size];
-                for (int i = 0; i < wrapper.getValues().size(); i++) {
+                for (int i = 0; i < size; i++) {
                     params[i] = wrapper.getValues().get(i);
                 }
             }

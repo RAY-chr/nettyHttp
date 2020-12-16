@@ -51,6 +51,7 @@ public class Test {
         Page<Book> page = dao.selectPage(new Page<>(1, 3),
                 new DefaultWrapper().eq("book_state","1"));
         List<Book> records = page.getRecords();
+        records.forEach(System.out::println);
         List<Book> books = dao.select(new DefaultWrapper().groupBy("book_state", "book_id")
                 .orderBy("book_id").eq("book_state",1).limit(0,3));
         books.forEach(System.out::println);

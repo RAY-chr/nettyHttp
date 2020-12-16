@@ -23,14 +23,17 @@ public class MysqlExecutor extends AbstractSqlExecutor {
             wrapper = new DefaultWrapper();
         }
         if (wrapper.isLimit()) {
-            throw new IllegalArgumentException(" wrpper can't contains limit");
+            throw new IllegalArgumentException(" wrapper can't contains limit");
         }
         wrapper.limit((current - 1) * size, size);
         List<?> list = this.select(clazz, wrapper);
         Page<?> result = new Page<>();
         result.setCurrent(current);
         result.setSize(size);
-        result.setTotal(this.count(clazz, wrapper) / size + 1);
+        long count = this.count(clazz, wrapper);
+        long total;
+        total = count % size == 0 ? count / size : count / size + 1;
+        result.setTotal(total);
         result.setRecords(list);
         return result;
     }
