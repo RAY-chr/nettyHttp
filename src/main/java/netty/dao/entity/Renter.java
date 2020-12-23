@@ -15,6 +15,9 @@ public class Renter {
     private String renter_id;
     private String renter_name;
 
+    public Renter() {
+    }
+
     public Renter(String renter_id, String renter_name) {
         this.renter_id = renter_id;
         this.renter_name = renter_name;

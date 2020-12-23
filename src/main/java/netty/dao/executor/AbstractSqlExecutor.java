@@ -56,6 +56,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             count = resultSet.getInt(1);
         }
         dbElement.getPreparedStatement().close();
+        dbElement.getResultSet().close();
         return count;
     }
 
@@ -209,8 +210,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         DBElement dbElement = this.executeQuery(sql.toString(), params);
         ResultSet resultSet = dbElement.getResultSet();
         List<Object> list = new ArrayList<>();
+        Field[] fields = clazz.getDeclaredFields();
         while (resultSet.next()) {
-            Field[] fields = clazz.getDeclaredFields();
             Object instance = clazz.newInstance();
             for (Field field : fields) {
                 Object object;
@@ -226,6 +227,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             list.add(instance);
         }
         dbElement.getPreparedStatement().close();
+        dbElement.getResultSet().close();
         return list;
     }
 
@@ -242,13 +244,15 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      */
     public DBElement executeQuery(String sql, Object[] params) throws Exception {
         logger.info("sql -> {}", sql);
-        Connection connection = ConnectionPool.getConnection();
+        Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         injectParams(preparedStatement, params);
         ResultSet resultSet = preparedStatement.executeQuery();
         // 直接关闭，结果集获取会出现错误
         //preparedStatement.close();
-        ConnectionPool.releaseConnection(connection);
+        if (!isBeginTransaction) {
+            ConnectionPool.releaseConnection(connection);
+        }
         return new DBElement(resultSet, preparedStatement);
     }
 
@@ -261,21 +265,16 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      */
     public int executeUpdate(String sql, Object[] params) throws Exception {
         logger.info("sql -> {}", sql);
-        if (isBeginTransaction) {
-            PreparedStatement preparedStatement = transaction.prepareStatement(sql);
-            injectParams(preparedStatement, params);
-            int update = preparedStatement.executeUpdate();
-            preparedStatement.close();
-            return update;
-        } else {
-            Connection connection = ConnectionPool.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            injectParams(preparedStatement, params);
-            int update = preparedStatement.executeUpdate();
+        Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        injectParams(preparedStatement, params);
+        int update = preparedStatement.executeUpdate();
+        if (!isBeginTransaction) {
             ConnectionPool.releaseConnection(connection);
-            preparedStatement.close();
-            return update;
         }
+        preparedStatement.close();
+        return update;
+
     }
 
     /**
@@ -288,14 +287,16 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      */
     public int executeBatch(String sql, List<Object[]> list) throws Exception {
         logger.info("sql -> {}", sql);
-        Connection connection = ConnectionPool.getConnection();
+        Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (Object[] params : list) {
             injectParams(preparedStatement, params);
             preparedStatement.addBatch();
         }
         int[] updates = preparedStatement.executeBatch();
-        ConnectionPool.releaseConnection(connection);
+        if (!isBeginTransaction) {
+            ConnectionPool.releaseConnection(connection);
+        }
         preparedStatement.close();
         return updates.length;
     }

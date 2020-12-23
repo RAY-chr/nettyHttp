@@ -31,8 +31,7 @@ public class MysqlExecutor extends AbstractSqlExecutor {
         result.setCurrent(current);
         result.setSize(size);
         long count = this.count(clazz, wrapper);
-        long total;
-        total = count % size == 0 ? count / size : count / size + 1;
+        long total = count % size == 0 ? count / size : count / size + 1;
         result.setTotal(total);
         result.setRecords(list);
         return result;
