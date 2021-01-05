@@ -37,6 +37,8 @@ public class RequestBodyResolver implements ArgumentResolver {
             Parameter[] methodParameters = method.getParameters();
             Parameter parameter = methodParameters[paramIndex];
             List<String> list = parameters.get(parameter.getName());
+            String value = parameter.getAnnotation(RequestBody.class).value();
+            list = list == null ? parameters.get(value) : list;
             if (list != null) {
                 String s = list.get(0);
                 JSONObject object = new JSONObject();

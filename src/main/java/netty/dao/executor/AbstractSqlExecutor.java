@@ -55,8 +55,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         while (resultSet.next()) {
             count = resultSet.getInt(1);
         }
-        dbElement.getPreparedStatement().close();
         dbElement.getResultSet().close();
+        dbElement.getPreparedStatement().close();
         return count;
     }
 
@@ -226,8 +226,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             }
             list.add(instance);
         }
-        dbElement.getPreparedStatement().close();
         dbElement.getResultSet().close();
+        dbElement.getPreparedStatement().close();
         return list;
     }
 
@@ -288,17 +288,34 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     public int executeBatch(String sql, List<Object[]> list) throws Exception {
         logger.info("sql -> {}", sql);
         Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
+        connection.setAutoCommit(false);
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        for (Object[] params : list) {
+        // 开启BATCH模式 自动提交事务 插入100万数据很慢很慢
+        /*for (Object[] params : list) {
             injectParams(preparedStatement, params);
             preparedStatement.addBatch();
+        }*/
+        int length = 0;
+        for (int i = 0; i < list.size(); i++) {
+            injectParams(preparedStatement, list.get(i));
+            preparedStatement.addBatch();
+            // 手动提交时 用了下面的方式100万数据1分25秒
+            /*if (i != 0 && i % 1000 == 0) {
+                length += preparedStatement.executeBatch().length;
+                connection.commit();
+                preparedStatement.clearBatch();
+            }*/
         }
-        int[] updates = preparedStatement.executeBatch();
+        // 不满一千条或者剩余不满一千条  直接全部数据addBatch, 最后手动提交1分16秒
+        length += preparedStatement.executeBatch().length;
         if (!isBeginTransaction) {
+            connection.commit();
+            preparedStatement.clearBatch();
+            connection.setAutoCommit(true);
             ConnectionPool.releaseConnection(connection);
         }
         preparedStatement.close();
-        return updates.length;
+        return length;
     }
 
     /**
