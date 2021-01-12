@@ -1,6 +1,8 @@
 package netty.dao.cache;
 
 import netty.dao.CommonStr;
+import netty.dao.DBConfig;
+import netty.dao.DBType;
 import netty.dao.annotion.TableField;
 import netty.dao.annotion.TableId;
 import netty.dao.annotion.TableName;
@@ -42,8 +44,8 @@ public class TableColumnCache {
             }
             try {
                 Connection connection = ConnectionPool.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(select + tableName
-                        + " limit 0,1");
+                PreparedStatement preparedStatement = connection.prepareStatement(
+                        sql(DBConfig.getString("dbType"), tableName));
                 ResultSet rs = null;
                 try {
                     rs = preparedStatement.executeQuery();
@@ -58,6 +60,9 @@ public class TableColumnCache {
                 map.put(CommonStr.TABLE, tableName);
                 for (int i = 0; i < size; i++) {
                     String columnName = metaData.getColumnName(i + 1);
+                    if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
+                        columnName = columnName.toLowerCase();
+                    }
                     Field field = null;
                     try {
                         field = aClass.getDeclaredField(columnName);
@@ -96,5 +101,14 @@ public class TableColumnCache {
             }
         }
         throw new RuntimeException("{ " + columnName + " }" + " can't be mapping the Bean : " + aClass.getName());
+    }
+
+    public static String sql(String type, String tableName) {
+        if (type.equals(DBType.MYSQL)) {
+            return select + tableName + " limit 0,1";
+        } else if (type.equals(DBType.ORACLE)) {
+            return select + tableName.toUpperCase();
+        }
+        throw new IllegalArgumentException(" not support the type ");
     }
 }

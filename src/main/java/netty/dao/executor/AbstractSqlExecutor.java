@@ -1,22 +1,26 @@
 package netty.dao.executor;
 
 import netty.dao.CommonStr;
+import netty.dao.DBConfig;
+import netty.dao.DBType;
 import netty.dao.DefaultWrapper;
 import netty.dao.annotion.TableId;
 import netty.dao.cache.TableColumnCache;
 import netty.dao.connection.ConnectionPool;
 import netty.dao.page.Page;
 import netty.http.utils.TypeChecker;
+import oracle.sql.TIMESTAMP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author RAY
@@ -31,7 +35,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     @Override
     public long count(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
-        StringBuffer sql = new StringBuffer("select count(*) from ");
+        StringBuilder sql = new StringBuilder("select count(*) from ");
         sql.append(map.get(CommonStr.TABLE));
         Object[] params = null;
         if (wrapper != null) {
@@ -128,7 +132,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         Objects.requireNonNull(id, "the id cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         String primarykey = map.get(CommonStr.PRIMARYKEY);
-        StringBuffer sql = new StringBuffer("delete from ");
+        StringBuilder sql = new StringBuilder("delete from ");
         sql.append(map.get(CommonStr.TABLE)).append(" where ").append(primarykey);
         sql.append(" = ").append("?");
         return this.executeUpdate(sql.toString(), new Object[]{id});
@@ -139,7 +143,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         Objects.requireNonNull(entity, "the entity cat't be null");
         Class<?> aClass = entity.getClass();
         Map<String, String> map = TableColumnCache.get(aClass.getSimpleName());
-        StringBuffer sql = new StringBuffer("update ");
+        StringBuilder sql = new StringBuilder("update ");
         sql.append(map.get(CommonStr.TABLE)).append(" set ");
         Field[] fields = aClass.getDeclaredFields();
         Object[] params = new Object[fields.length];
@@ -172,7 +176,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         Objects.requireNonNull(wrapper, "the wrapper cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         String primarykey = map.get(CommonStr.PRIMARYKEY);
-        StringBuffer sql = new StringBuffer("delete from ");
+        StringBuilder sql = new StringBuilder("delete from ");
         sql.append(map.get(CommonStr.TABLE));
         sql.append(wrapper.getSqlString());
         int size = wrapper.getValues().size();
@@ -194,19 +198,24 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     @Override
     public List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
-        StringBuffer sql = new StringBuffer("select * from ");
-        Object[] params = null;
+        StringBuilder sql = new StringBuilder("select * from ");
         sql.append(map.get(CommonStr.TABLE));
         if (wrapper != null) {
             sql.append(wrapper.getSqlString());
         }
-        if (wrapper != null && wrapper.getValues().size() > 0) {
-            int size = wrapper.getValues().size();
+        Object[] params = null;
+        int size = wrapper.getValues().size();
+        if (wrapper != null && size > 0) {
             params = new Object[size];
-            for (int i = 0; i < wrapper.getValues().size(); i++) {
+            for (int i = 0; i < size; i++) {
                 params[i] = wrapper.getValues().get(i);
             }
         }
+        return this.selectList(clazz, sql.toString(), params);
+    }
+
+    public List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception {
+        Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         DBElement dbElement = this.executeQuery(sql.toString(), params);
         ResultSet resultSet = dbElement.getResultSet();
         List<Object> list = new ArrayList<>();
@@ -219,6 +228,11 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
                     object = resultSet.getObject(map.get(field.getName()));
                 } else {
                     object = resultSet.getObject(map.get(CommonStr.PRIMARYKEY));
+                }
+                if (object instanceof TIMESTAMP) {
+                    Timestamp timestamp = resultSet.getTimestamp(map.get(field.getName()));
+                    timestamp.setNanos(0);
+                    object = timestamp;
                 }
                 field.setAccessible(true);
                 field.set(instance, TypeChecker.parseValue(field.getType(),
@@ -243,6 +257,9 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws Exception
      */
     public DBElement executeQuery(String sql, Object[] params) throws Exception {
+        if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
+            sql = sql.toUpperCase();
+        }
         logger.info("sql -> {}", sql);
         Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -264,6 +281,9 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws Exception
      */
     public int executeUpdate(String sql, Object[] params) throws Exception {
+        if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
+            sql = sql.toUpperCase();
+        }
         logger.info("sql -> {}", sql);
         Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -286,6 +306,9 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws Exception
      */
     public int executeBatch(String sql, List<Object[]> list) throws Exception {
+        if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
+            sql = sql.toUpperCase();
+        }
         logger.info("sql -> {}", sql);
         Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
         connection.setAutoCommit(false);
@@ -327,13 +350,16 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      */
     public void injectParams(PreparedStatement preparedStatement, Object[] params) throws SQLException {
         if (params != null) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder buffer = new StringBuilder();
             for (Object param : params) {
                 buffer.append(String.valueOf(param)).append(", ");
             }
             buffer.setCharAt(buffer.lastIndexOf(","), ' ');
             logger.info("params -> {}", buffer.toString());
             for (int i = 0; i < params.length; i++) {
+                if (params[i] instanceof LocalDateTime) {
+                    params[i] = Timestamp.valueOf((LocalDateTime) params[i]);
+                }
                 preparedStatement.setObject(i + 1, params[i]);
             }
         }
@@ -346,12 +372,12 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @return
      * @throws Exception
      */
-    private String insertSql(Object entity) throws Exception {
+    protected String insertSql(Object entity) throws Exception {
         Class<?> aClass = entity.getClass();
         Field[] fields = aClass.getDeclaredFields();
         String name = aClass.getSimpleName();
         Map<String, String> map = TableColumnCache.get(name);
-        StringBuffer sql = new StringBuffer("insert into " + map.get(CommonStr.TABLE) + " ( ");
+        StringBuilder sql = new StringBuilder("insert into " + map.get(CommonStr.TABLE) + " ( ");
         for (Field field : fields) {
             if (field.getAnnotation(TableId.class) != null) {
                 sql.append(map.get(CommonStr.PRIMARYKEY)).append(", ");

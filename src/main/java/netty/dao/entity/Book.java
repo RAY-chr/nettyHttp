@@ -51,14 +51,14 @@ public class Book {
         this.bookId = bookId;
     }
 
-    private LocalDateTime date;
+    private LocalDateTime localdate;
 
     public LocalDateTime getDate() {
-        return date;
+        return localdate;
     }
 
     public Book setDate(LocalDateTime date) {
-        this.date = date;
+        this.localdate = date;
         return this;
     }
 
@@ -96,12 +96,12 @@ public class Book {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("Book{");
+        final StringBuilder sb = new StringBuilder("Book{");
         sb.append("bookId=").append(bookId);
         sb.append(", bookNo='").append(bookNo).append('\'');
         sb.append(", bookName='").append(bookName).append('\'');
         sb.append(", bookState='").append(bookState).append('\'');
-        sb.append(", date=").append(date);
+        sb.append(", date=").append(localdate);
         sb.append('}');
         return sb.toString();
     }

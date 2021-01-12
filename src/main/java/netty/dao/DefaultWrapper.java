@@ -13,11 +13,12 @@ import java.util.function.Supplier;
  * @since 2020/12/6
  */
 public class DefaultWrapper {
-    private StringBuffer sql = new StringBuffer();
-    private StringBuffer whereSql = new StringBuffer(" where ");
-    private StringBuffer groupBySql = new StringBuffer(" group by ");
-    private StringBuffer orderBySql = new StringBuffer(" order by ");
-    private StringBuffer limitSql = new StringBuffer(" limit ");
+    private StringBuilder sql = new StringBuilder();
+    private StringBuilder whereSql = new StringBuilder(" where ");
+    private StringBuilder groupBySql = new StringBuilder(" group by ");
+    private StringBuilder orderBySql = new StringBuilder(" order by ");
+    private StringBuilder limitSql = new StringBuilder(" limit ");
+    private List<String> columns = new ArrayList<>();
     private List<Object> whereList = new ArrayList<>();
     private boolean isSqlFinish = false;
     private boolean limit = false;
@@ -27,24 +28,28 @@ public class DefaultWrapper {
     }
 
     public DefaultWrapper eq(String column, Object val) {
+        columns.add(column);
         whereList.add(val);
         whereSql.append(column).append(" = ?").append(" and ");
         return this;
     }
 
     public DefaultWrapper like(String column, Object val) {
+        columns.add(column);
         whereList.add("%" + val + "%");
         whereSql.append(column).append(" like ?").append(" and ");
         return this;
     }
 
     public DefaultWrapper gt(String column, Object val) {
+        columns.add(column);
         whereList.add(val);
         whereSql.append(column).append(" > ?").append(" and ");
         return this;
     }
 
     public DefaultWrapper ge(String column, Object val) {
+        columns.add(column);
         whereList.add(val);
         whereSql.append(column).append(" >= ?").append(" and ");
         return this;
@@ -58,6 +63,7 @@ public class DefaultWrapper {
 
     public DefaultWrapper groupBy(String... column) {
         List<String> list = Arrays.asList(column);
+        columns.addAll(list);
         for (String s : list) {
             groupBySql.append(s).append(", ");
         }
@@ -72,6 +78,7 @@ public class DefaultWrapper {
      */
     public DefaultWrapper orderBy(String... column) {
         List<String> list = Arrays.asList(column);
+        columns.addAll(list);
         for (String s : list) {
             orderBySql.append(s).append(" asc").append(", ");
         }
@@ -80,6 +87,7 @@ public class DefaultWrapper {
 
     public DefaultWrapper orderDesc(String... column) {
         List<String> list = Arrays.asList(column);
+        columns.addAll(list);
         for (String s : list) {
             orderBySql.append(s).append(" desc").append(", ");
         }
@@ -120,6 +128,10 @@ public class DefaultWrapper {
             limitSql = null;
         }
         return sql.toString();
+    }
+
+    public List<String> getColumns() {
+        return columns;
     }
 
     public List<Object> getValues() {
