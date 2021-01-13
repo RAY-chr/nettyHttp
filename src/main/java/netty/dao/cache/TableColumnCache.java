@@ -35,6 +35,12 @@ public class TableColumnCache {
 
     static {
         Set<Class<?>> classes = PackageScanner.getClasses(entityPath);
+        Connection connection = null;
+        try {
+            connection = ConnectionPool.getConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         for (Class<?> aClass : classes) {
             String simpleName = aClass.getSimpleName();
             String tableName = simpleName;
@@ -43,7 +49,6 @@ public class TableColumnCache {
                 tableName = annotation.value();
             }
             try {
-                Connection connection = ConnectionPool.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement(
                         sql(DBConfig.getString("dbType"), tableName));
                 ResultSet rs = null;
@@ -62,6 +67,9 @@ public class TableColumnCache {
                     String columnName = metaData.getColumnName(i + 1);
                     if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
                         columnName = columnName.toLowerCase();
+                        if (columnName.equals("rn")) {
+                            continue;
+                        }
                     }
                     Field field = null;
                     try {
@@ -76,12 +84,14 @@ public class TableColumnCache {
                         map.put(field.getName(), columnName);
                     }
                 }
+                rs.close();
+                preparedStatement.close();
                 put(simpleName, map);
-                ConnectionPool.releaseConnection(connection);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+        ConnectionPool.releaseConnection(connection);
     }
 
     public static Field getField(Class<?> aClass, String columnName) {
@@ -107,7 +117,11 @@ public class TableColumnCache {
         if (type.equals(DBType.MYSQL)) {
             return select + tableName + " limit 0,1";
         } else if (type.equals(DBType.ORACLE)) {
-            return select + tableName.toUpperCase();
+            StringBuilder sql = new StringBuilder("SELECT * FROM (SELECT a.*, ROWNUM rn FROM ( ");
+            sql.append("SELECT * FROM ");
+            sql.append(tableName.toUpperCase());
+            sql.append(" ) a WHERE ROWNUM < 2) WHERE rn > 0");
+            return sql.toString();
         }
         throw new IllegalArgumentException(" not support the type ");
     }

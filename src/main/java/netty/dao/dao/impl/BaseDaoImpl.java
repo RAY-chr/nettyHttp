@@ -58,17 +58,17 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
 
     @Override
     public T selectById(Serializable id) throws Exception {
-        return (T) selectSession.selectById(clazz, id);
+        return (T) this.getSession().selectById(clazz, id);
     }
 
     @Override
     public List<T> select(DefaultWrapper wrapper) throws Exception {
-        return (List<T>) selectSession.select(clazz, wrapper);
+        return (List<T>) this.getSession().select(clazz, wrapper);
     }
 
     @Override
     public Page<T> selectPage(Page<T> page, DefaultWrapper wrapper) throws Exception {
-        Page<?> reult = selectSession.selectPage(clazz, page, wrapper);
+        Page<?> reult = this.getSession().selectPage(clazz, page, wrapper);
         return (Page<T>) reult;
     }
 

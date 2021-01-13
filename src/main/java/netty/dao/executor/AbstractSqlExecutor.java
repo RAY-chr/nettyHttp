@@ -9,7 +9,6 @@ import netty.dao.cache.TableColumnCache;
 import netty.dao.connection.ConnectionPool;
 import netty.dao.page.Page;
 import netty.http.utils.TypeChecker;
-import oracle.sql.TIMESTAMP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -204,8 +203,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             sql.append(wrapper.getSqlString());
         }
         Object[] params = null;
-        int size = wrapper.getValues().size();
-        if (wrapper != null && size > 0) {
+        int size = 0;
+        if (wrapper != null && (size = wrapper.getValues().size()) > 0) {
             params = new Object[size];
             for (int i = 0; i < size; i++) {
                 params[i] = wrapper.getValues().get(i);
@@ -229,7 +228,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
                 } else {
                     object = resultSet.getObject(map.get(CommonStr.PRIMARYKEY));
                 }
-                if (object instanceof TIMESTAMP) {
+                if (field.getType() == LocalDateTime.class) {
                     Timestamp timestamp = resultSet.getTimestamp(map.get(field.getName()));
                     timestamp.setNanos(0);
                     object = timestamp;
