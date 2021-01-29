@@ -1,36 +1,16 @@
 package netty.dao.session;
 
-import netty.dao.CommonStr;
 import netty.dao.DBConfig;
 import netty.dao.DefaultWrapper;
-import netty.dao.annotion.TableId;
-import netty.dao.cache.TableColumnCache;
-import netty.dao.connection.ConnectionPool;
-import netty.dao.dao.BookDao;
-import netty.dao.dao.impl.BookDaoImpl;
-import netty.dao.entity.Book;
-import netty.dao.entity.Renter;
-import netty.dao.executor.MysqlExecutor;
 import netty.dao.executor.SqlExecutor;
 import netty.dao.executor.SqlExecutorFactory;
 import netty.dao.page.Page;
-import netty.http.HttpServerHandler;
-import org.apache.ibatis.jdbc.SQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.security.AlgorithmConstraints;
-import java.sql.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author RAY

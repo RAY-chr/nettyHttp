@@ -1,9 +1,6 @@
 package netty.http.utils;
 
-import com.alibaba.druid.sql.visitor.functions.Char;
-import netty.http.annotion.RequestParam;
 
-import javax.lang.model.element.VariableElement;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -12,7 +9,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -133,7 +129,7 @@ public class TypeChecker {
         checker.add(Long.class);
         checker.add(Float.class);
         checker.add(Double.class);
-        checker.add(Char.class);
+        checker.add(Character.class);
         checker.add(Boolean.class);
     }
 }

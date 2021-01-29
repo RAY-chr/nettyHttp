@@ -91,14 +91,20 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     @Override
     public void commit() throws Exception {
         transaction.commit();
-        isBeginTransaction = false;
-        transaction.setAutoCommit(true);
-        ConnectionPool.releaseConnection(transaction);
+        close();
     }
 
     @Override
     public void rollback() throws Exception {
         transaction.rollback();
+        close();
+    }
+
+    private void close() throws SQLException {
+        isBeginTransaction = false;
+        transaction.setAutoCommit(true);
+        ConnectionPool.releaseConnection(transaction);
+        transaction = null;
     }
 
     @Override
@@ -230,7 +236,9 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
                 }
                 if (field.getType() == LocalDateTime.class) {
                     Timestamp timestamp = resultSet.getTimestamp(map.get(field.getName()));
-                    timestamp.setNanos(0);
+                    if (timestamp != null) {
+                        timestamp.setNanos(0);
+                    }
                     object = timestamp;
                 }
                 field.setAccessible(true);
@@ -351,7 +359,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         if (params != null) {
             StringBuilder buffer = new StringBuilder();
             for (Object param : params) {
-                buffer.append(String.valueOf(param)).append(", ");
+                buffer.append(String.valueOf(param)).append("(");
+                buffer.append(param == null ? "Object" : param.getClass().getSimpleName()).append("), ");
             }
             buffer.setCharAt(buffer.lastIndexOf(","), ' ');
             logger.info("params -> {}", buffer.toString());
@@ -376,7 +385,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         Field[] fields = aClass.getDeclaredFields();
         String name = aClass.getSimpleName();
         Map<String, String> map = TableColumnCache.get(name);
-        StringBuilder sql = new StringBuilder("insert into " + map.get(CommonStr.TABLE) + " ( ");
+        StringBuilder sql = new StringBuilder("insert into " + map.get(CommonStr.TABLE) + " (  ");
         for (Field field : fields) {
             if (field.getAnnotation(TableId.class) != null) {
                 sql.append(map.get(CommonStr.PRIMARYKEY)).append(", ");

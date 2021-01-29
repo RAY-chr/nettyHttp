@@ -48,6 +48,20 @@ public class DefaultWrapper {
         return this;
     }
 
+    public DefaultWrapper lt(String column, Object val) {
+        columns.add(column);
+        whereList.add(val);
+        whereSql.append(column).append(" < ?").append(" and ");
+        return this;
+    }
+
+    public DefaultWrapper le(String column, Object val) {
+        columns.add(column);
+        whereList.add(val);
+        whereSql.append(column).append(" <= ?").append(" and ");
+        return this;
+    }
+
     public DefaultWrapper ge(String column, Object val) {
         columns.add(column);
         whereList.add(val);
