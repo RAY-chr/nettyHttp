@@ -20,7 +20,7 @@ import java.util.List;
 public class BaseDaoImpl<T> implements BaseDao<T> {
 
     private Class clazz;
-    private SqlSession selectSession = SqlSessionFactory.openSession();
+    //private SqlSession selectSession = SqlSessionFactory.openSession();
 
     public BaseDaoImpl() {
         Type type = this.getClass().getGenericSuperclass();
@@ -68,8 +68,8 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
 
     @Override
     public Page<T> selectPage(Page<T> page, DefaultWrapper wrapper) throws Exception {
-        Page<?> reult = this.getSession().selectPage(clazz, page, wrapper);
-        return (Page<T>) reult;
+        Page<?> result = this.getSession().selectPage(clazz, page, wrapper);
+        return (Page<T>) result;
     }
 
     public SqlSession getSession() {

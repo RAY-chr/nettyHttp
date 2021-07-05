@@ -10,15 +10,15 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import net.sf.json.JSONObject;
-
 import netty.http.annotion.ResponseBody;
 import netty.http.route.RouteMethod;
-import netty.http.utils.TypeChecker;
 import netty.http.utils.JsonUtils;
+import netty.http.utils.TypeChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +64,13 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
                 if (code == null) {
                     code = nullStr;
                 }
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+                code = e.getTargetException();
+                while (code instanceof InvocationTargetException) {
+                    code = ((InvocationTargetException) code).getTargetException();
+                }
+                content_type = TEXT_PLAIN;
             } catch (Exception e) {
                 e.printStackTrace();
                 code = e;
