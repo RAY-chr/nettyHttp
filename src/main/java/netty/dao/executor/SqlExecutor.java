@@ -34,6 +34,8 @@ public interface SqlExecutor {
 
     List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
 
+    List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception;
+
     Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception;
 
 }

@@ -22,9 +22,13 @@ public class ConnectionPool {
     private static final Map<Connection, Long> expired = new HashMap<>();
     private static boolean init = false;
     private static long expiredTime = Long.parseLong(DBConfig.getString("expiredTime"));
+    private static long max = 40;
+    private static int count = 0;
 
     /**
      * 获取连接，如果连接失效，获取有效连接
+     * 池子的连接最大加到 max 就会等待，等连接释放的时候，会判断继续等待还是返回连接
+     *
      * @return
      * @throws Exception
      */
@@ -36,14 +40,21 @@ public class ConnectionPool {
             statement = connection.createStatement();
         } catch (Exception e) {
             if (e instanceof NoSuchElementException) {
+                if (count >= max) {
+                    while (count >= max && connections.size() == 0) {
+                        ConnectionPool.class.wait();
+                    }
+                    return removeFirst(connections);
+                }
                 System.err.println("---------------->>>>>>>> no such <<<<<<<<-------------------");
                 for (int i = 0; i < 30; i++) {
                     connections.add(produce());
                 }
+                count += 30;
             } else if (e instanceof SQLException) {
                 reSet();
             }
-            return connections.removeFirst();
+            return removeFirst(connections);
         }
         statement.close();
         if (expired(connection)) {
@@ -55,6 +66,7 @@ public class ConnectionPool {
 
     /**
      * 保证有效连接
+     *
      * @return
      * @throws Exception
      */
@@ -64,7 +76,7 @@ public class ConnectionPool {
             Connection next = iterator.next();
             if (expired(next)) {
                 iterator.remove();
-                System.err.println(" >>>clear the connection ["+next+"]<<< ");
+                System.err.println(" >>>clear the connection [" + next + "]<<< ");
                 expired.remove(next);
             }
         }
@@ -73,8 +85,9 @@ public class ConnectionPool {
             removeFirst = connections.removeFirst();
         } catch (Exception e) {
             reSet();
-            return connections.removeFirst();
+            return removeFirst(connections);
         }
+        expired.put(removeFirst, System.currentTimeMillis() + expiredTime * 1000);
         return removeFirst;
     }
 
@@ -83,8 +96,21 @@ public class ConnectionPool {
         return System.currentTimeMillis() > futureTime;
     }
 
+    /**
+     * 返回连接前修改其时间戳
+     *
+     * @param connections
+     * @return
+     */
+    private static Connection removeFirst(LinkedList<Connection> connections) {
+        Connection connection = connections.removeFirst();
+        expired.put(connection, System.currentTimeMillis() + expiredTime * 1000);
+        return connection;
+    }
+
     public synchronized static void releaseConnection(Connection connection) {
         connections.add(connection);
+        ConnectionPool.class.notifyAll();
     }
 
     public static Connection produce() throws Exception {
@@ -104,6 +130,7 @@ public class ConnectionPool {
         for (int i = 0; i < 10; i++) {
             connections.add(produce());
         }
+        count = 10;
     }
 
     static {
@@ -111,6 +138,7 @@ public class ConnectionPool {
             for (int i = 0; i < 10; i++) {
                 connections.add(produce());
             }
+            count += 10;
         } catch (Exception e) {
             e.printStackTrace();
         }

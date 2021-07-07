@@ -12,6 +12,7 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import net.sf.json.JSONObject;
 import netty.http.annotion.ResponseBody;
 import netty.http.route.RouteMethod;
+import netty.http.utils.ExceptionUtil;
 import netty.http.utils.JsonUtils;
 import netty.http.utils.TypeChecker;
 import org.slf4j.Logger;
@@ -66,10 +67,11 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
                 }
             } catch (InvocationTargetException e) {
                 e.printStackTrace();
-                code = e.getTargetException();
+                /*code = e.getTargetException();
                 while (code instanceof InvocationTargetException) {
                     code = ((InvocationTargetException) code).getTargetException();
-                }
+                }*/
+                code = ExceptionUtil.unwrapThrowable(e);
                 content_type = TEXT_PLAIN;
             } catch (Exception e) {
                 e.printStackTrace();

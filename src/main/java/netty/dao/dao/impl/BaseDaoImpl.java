@@ -67,6 +67,11 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
     }
 
     @Override
+    public List<T> selectList(String sql, Object[] params) throws Exception {
+        return (List<T>) this.getSession().selectList(clazz, sql, params);
+    }
+
+    @Override
     public Page<T> selectPage(Page<T> page, DefaultWrapper wrapper) throws Exception {
         Page<?> result = this.getSession().selectPage(clazz, page, wrapper);
         return (Page<T>) result;

@@ -18,7 +18,7 @@ import java.util.List;
  * @since 2020/12/6
  */
 public class DefaultSqlSession implements SqlSession {
-    private static Logger logger = LoggerFactory.getLogger(DefaultSqlSession.class);
+
     private SqlExecutor sqlExecutor = getByType();
 
     /**
@@ -92,6 +92,11 @@ public class DefaultSqlSession implements SqlSession {
     @Override
     public List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
         return sqlExecutor.select(clazz, wrapper);
+    }
+
+    @Override
+    public List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception {
+        return sqlExecutor.selectList(clazz, sql, params);
     }
 
     @Override

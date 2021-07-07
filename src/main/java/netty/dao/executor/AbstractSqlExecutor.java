@@ -356,7 +356,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
      * @throws SQLException
      */
     public void injectParams(PreparedStatement preparedStatement, Object[] params) throws SQLException {
-        if (params != null) {
+        if (params != null && params.length > 0) {
             StringBuilder buffer = new StringBuilder();
             for (Object param : params) {
                 buffer.append(String.valueOf(param)).append("(");

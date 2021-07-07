@@ -26,5 +26,7 @@ public interface BaseDao<T> {
 
     List<T> select(DefaultWrapper wrapper) throws Exception;
 
+    List<T> selectList(String sql, Object[] params) throws Exception;
+
     Page<T> selectPage(Page<T> page, DefaultWrapper wrapper) throws Exception;
 }
