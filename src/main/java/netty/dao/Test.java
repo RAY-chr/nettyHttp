@@ -51,7 +51,7 @@ public class Test {
     @org.junit.Test
     public void demo1() throws Exception {
         List<Book> list = new ArrayList<>();
-        for (int i = 1; i < 1000; i++) {
+        for (int i = 2; i < 1000; i++) {
             Book book = new Book(i).setDate(LocalDateTime.now());
             book.setBookNo("100" + i);
             book.setBookName("数学" + i);
@@ -61,7 +61,7 @@ public class Test {
         dao.saveBatch(list);
         List<Book> books = dao.select(new DefaultWrapper().lt("localdate", LocalDateTime.now()
                 /*formatter.format(LocalDateTime.now())*/));
-        books.forEach(System.out::println);
+        //books.forEach(System.out::println);
         //Book book = dao.selectById(1);
         //System.out.println(book);
         //dao.delete(new DefaultWrapper().gt("book_id",1));
@@ -88,6 +88,22 @@ public class Test {
                 .orderBy("book_id").eq("book_state",1).limit(0,3));
         books.forEach(System.out::println);*/
         System.out.println(dao.selectById(4));
+        List<String> strings = dao.executeQuery(
+                "select count(*) total,book_id,book_no from book where book_id = ?",
+                new Object[]{1},
+                resultSet -> {
+                    List<String> list = new ArrayList<>();
+                    while (resultSet.next()) {
+                        long total = resultSet.getLong("total");
+                        String book_id = resultSet.getString("book_id");
+                        String book_no = resultSet.getString("book_no");
+                        list.add(total + book_id + book_no);
+                    }
+                    return list;
+                });
+        System.out.println(strings);
+//        dao.selectList("select count(*) total,book_id,book_no from book where book_id = ?",
+//                new Object[]{1});
     }
 
     /**
@@ -101,6 +117,10 @@ public class Test {
         BookDao bookDao = new BookDaoImpl();
         RenterDao renterDao = new RenterDaoImpl();
         SqlSession currentSession = SqlSessionFactory.getCurrentSession();
+        Book id = bookDao.selectById(10);
+        if (id != null) {
+            bookDao.deleteById(id.getBookId());
+        }
         currentSession.beginTransaction();
         Book book = new Book(10).setDate(LocalDateTime.now());
         book.setBookNo("100" + 10);

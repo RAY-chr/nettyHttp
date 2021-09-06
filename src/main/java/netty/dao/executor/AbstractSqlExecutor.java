@@ -272,12 +272,36 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         injectParams(preparedStatement, params);
         ResultSet resultSet = preparedStatement.executeQuery();
+        /**
+         * 可以获取结果集中的结果有几个值
+         */
+        /*ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();*/
         // 直接关闭，结果集获取会出现错误
         //preparedStatement.close();
         if (!isBeginTransaction) {
             ConnectionPool.releaseConnection(connection);
         }
         return new DBElement(resultSet, preparedStatement);
+    }
+
+    public <T> T executeQuery(String sql, Object[] params,
+                              InvokeResultSet<T> invokeResultSet) throws Exception {
+        if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
+            sql = sql.toUpperCase();
+        }
+        logger.info("sql -> {}", sql);
+        Connection connection = isBeginTransaction ? transaction : ConnectionPool.getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        injectParams(preparedStatement, params);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        T invoke = invokeResultSet.invoke(resultSet);
+        resultSet.close();
+        preparedStatement.close();
+        if (!isBeginTransaction) {
+            ConnectionPool.releaseConnection(connection);
+        }
+        return invoke;
     }
 
     /**
@@ -329,7 +353,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         for (int i = 0; i < list.size(); i++) {
             injectParams(preparedStatement, list.get(i));
             preparedStatement.addBatch();
-            // 手动提交时 用了下面的方式100万数据1分25秒
+            // 手动提交时 用了下面的方式100万数据1分25秒  数据量巨大的时候，必须采用如下方式，不然 outOfMemory
             /*if (i != 0 && i % 1000 == 0) {
                 length += preparedStatement.executeBatch().length;
                 connection.commit();

@@ -36,6 +36,8 @@ public interface SqlExecutor {
 
     List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception;
 
+    <T> T executeQuery(String sql, Object[] params, InvokeResultSet<T> invokeResultSet) throws Exception;
+
     Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception;
 
 }

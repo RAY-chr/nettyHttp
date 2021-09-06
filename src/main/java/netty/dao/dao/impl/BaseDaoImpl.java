@@ -2,6 +2,7 @@ package netty.dao.dao.impl;
 
 import netty.dao.DefaultWrapper;
 import netty.dao.dao.BaseDao;
+import netty.dao.executor.InvokeResultSet;
 import netty.dao.page.Page;
 import netty.dao.session.DefaultSqlSession;
 import netty.dao.session.SqlSession;
@@ -69,6 +70,12 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
     @Override
     public List<T> selectList(String sql, Object[] params) throws Exception {
         return (List<T>) this.getSession().selectList(clazz, sql, params);
+    }
+
+    @Override
+    public <E> E executeQuery(String sql, Object[] params,
+                              InvokeResultSet<E> invokeResultSet) throws Exception {
+        return this.getSession().executeQuery(sql, params, invokeResultSet);
     }
 
     @Override

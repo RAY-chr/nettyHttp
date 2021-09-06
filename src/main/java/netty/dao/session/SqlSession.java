@@ -1,6 +1,7 @@
 package netty.dao.session;
 
 import netty.dao.DefaultWrapper;
+import netty.dao.executor.InvokeResultSet;
 import netty.dao.page.Page;
 
 import java.io.Serializable;
@@ -34,6 +35,9 @@ public interface SqlSession {
     List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
 
     List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception;
+
+    public <T> T executeQuery(String sql, Object[] params,
+                              InvokeResultSet<T> invokeResultSet) throws Exception;
 
     Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception;
 }

@@ -2,6 +2,7 @@ package netty.dao.session;
 
 import netty.dao.DBConfig;
 import netty.dao.DefaultWrapper;
+import netty.dao.executor.InvokeResultSet;
 import netty.dao.executor.SqlExecutor;
 import netty.dao.executor.SqlExecutorFactory;
 import netty.dao.page.Page;
@@ -97,6 +98,11 @@ public class DefaultSqlSession implements SqlSession {
     @Override
     public List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception {
         return sqlExecutor.selectList(clazz, sql, params);
+    }
+
+    @Override
+    public <T> T executeQuery(String sql, Object[] params, InvokeResultSet<T> invokeResultSet) throws Exception {
+        return sqlExecutor.executeQuery(sql, params, invokeResultSet);
     }
 
     @Override

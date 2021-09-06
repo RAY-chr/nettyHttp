@@ -1,6 +1,7 @@
 package netty.dao.dao;
 
 import netty.dao.DefaultWrapper;
+import netty.dao.executor.InvokeResultSet;
 import netty.dao.page.Page;
 
 import java.io.Serializable;
@@ -27,6 +28,9 @@ public interface BaseDao<T> {
     List<T> select(DefaultWrapper wrapper) throws Exception;
 
     List<T> selectList(String sql, Object[] params) throws Exception;
+
+    public <E> E executeQuery(String sql, Object[] params,
+                              InvokeResultSet<E> invokeResultSet) throws Exception;
 
     Page<T> selectPage(Page<T> page, DefaultWrapper wrapper) throws Exception;
 }
