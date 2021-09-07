@@ -29,7 +29,7 @@ public interface BaseDao<T> {
 
     List<T> selectList(String sql, Object[] params) throws Exception;
 
-    public <E> E executeQuery(String sql, Object[] params,
+    <E> E executeQuery(String sql, Object[] params,
                               InvokeResultSet<E> invokeResultSet) throws Exception;
 
     Page<T> selectPage(Page<T> page, DefaultWrapper wrapper) throws Exception;

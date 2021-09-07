@@ -36,7 +36,7 @@ public interface SqlSession {
 
     List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception;
 
-    public <T> T executeQuery(String sql, Object[] params,
+    <T> T executeQuery(String sql, Object[] params,
                               InvokeResultSet<T> invokeResultSet) throws Exception;
 
     Page<?> selectPage(Class<?> clazz, Page<?> page, DefaultWrapper wrapper) throws Exception;
