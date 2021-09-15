@@ -6,6 +6,7 @@ import netty.dao.page.Page;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author RAY
@@ -28,6 +29,8 @@ public interface BaseDao<T> {
     List<T> select(DefaultWrapper wrapper) throws Exception;
 
     List<T> selectList(String sql, Object[] params) throws Exception;
+
+    List<Map<String, Object>> selectMaps(String sql, Object[] params) throws Exception;
 
     <E> E executeQuery(String sql, Object[] params,
                               InvokeResultSet<E> invokeResultSet) throws Exception;

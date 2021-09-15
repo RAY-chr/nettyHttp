@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author RAY
@@ -98,6 +99,11 @@ public class DefaultSqlSession implements SqlSession {
     @Override
     public List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception {
         return sqlExecutor.selectList(clazz, sql, params);
+    }
+
+    @Override
+    public List<Map<String, Object>> selectMaps(String sql, Object[] params) throws Exception {
+        return sqlExecutor.selectMaps(sql, params);
     }
 
     @Override

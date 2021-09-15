@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author RAY
@@ -70,6 +71,11 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
     @Override
     public List<T> selectList(String sql, Object[] params) throws Exception {
         return (List<T>) this.getSession().selectList(clazz, sql, params);
+    }
+
+    @Override
+    public List<Map<String, Object>> selectMaps(String sql, Object[] params) throws Exception {
+        return this.getSession().selectMaps(sql, params);
     }
 
     @Override

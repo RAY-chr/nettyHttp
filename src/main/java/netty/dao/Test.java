@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author RAY
@@ -102,6 +103,10 @@ public class Test {
                     return list;
                 });
         System.out.println(strings);
+
+        List<Map<String, Object>> list = dao.selectMaps(
+                "select ( SELECT count(*) FROM book ) total,book_id,book_no from book", null);
+        list.forEach(System.out::println);
 //        dao.selectList("select count(*) total,book_id,book_no from book where book_id = ?",
 //                new Object[]{1});
     }

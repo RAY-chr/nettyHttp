@@ -16,10 +16,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author RAY
@@ -250,6 +247,24 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         dbElement.getResultSet().close();
         dbElement.getPreparedStatement().close();
         return list;
+    }
+
+    public List<Map<String, Object>> selectMaps(String sql, Object[] params) throws Exception {
+        return this.executeQuery(sql, params, resultSet -> {
+            List<Map<String, Object>> list = new ArrayList<>();
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            while (resultSet.next()) {
+                Map<String, Object> map = new HashMap<>();
+                for (int i = 0; i < columnCount; i++) {
+                    String columnLabel = metaData.getColumnLabel(i + 1);
+                    Object object = resultSet.getObject(i + 1);
+                    map.put(columnLabel, object);
+                }
+                list.add(map);
+            }
+            return list;
+        });
     }
 
     @Override

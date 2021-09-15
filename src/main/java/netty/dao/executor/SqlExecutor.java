@@ -5,6 +5,7 @@ import netty.dao.page.Page;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author RAY
@@ -35,6 +36,8 @@ public interface SqlExecutor {
     List<?> select(Class<?> clazz, DefaultWrapper wrapper) throws Exception;
 
     List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception;
+
+    List<Map<String, Object>> selectMaps(String sql, Object[] params) throws Exception;
 
     <T> T executeQuery(String sql, Object[] params, InvokeResultSet<T> invokeResultSet) throws Exception;
 
