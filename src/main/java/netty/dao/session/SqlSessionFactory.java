@@ -15,7 +15,7 @@ public class SqlSessionFactory {
     /**
      * 这种获得session的方式需要及时清除
      *
-     * @return
+     * @return SqlSession
      */
     public static SqlSession getCurrentSession() {
         if (session.get() == null) {

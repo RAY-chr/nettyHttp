@@ -1,11 +1,8 @@
 package netty.dao;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * @author RAY
@@ -87,8 +84,8 @@ public class DefaultWrapper {
     /**
      * 默认为升序
      *
-     * @param column
-     * @return
+     * @param column 多个字段
+     * @return DefaultWrapper
      */
     public DefaultWrapper orderBy(String... column) {
         List<String> list = Arrays.asList(column);

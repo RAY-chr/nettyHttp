@@ -4,7 +4,6 @@ import netty.dao.DefaultWrapper;
 import netty.dao.dao.BaseDao;
 import netty.dao.executor.InvokeResultSet;
 import netty.dao.page.Page;
-import netty.dao.session.DefaultSqlSession;
 import netty.dao.session.SqlSession;
 import netty.dao.session.SqlSessionFactory;
 
@@ -19,9 +18,10 @@ import java.util.Map;
  * @descriptions
  * @since 2020/12/6
  */
+@SuppressWarnings("unchecked")
 public class BaseDaoImpl<T> implements BaseDao<T> {
 
-    private Class clazz;
+    private Class<?> clazz;
     //private SqlSession selectSession = SqlSessionFactory.openSession();
 
     public BaseDaoImpl() {
@@ -29,7 +29,7 @@ public class BaseDaoImpl<T> implements BaseDao<T> {
         if (type instanceof ParameterizedType) {
             ParameterizedType pa = (ParameterizedType) type;
             Type argument = pa.getActualTypeArguments()[0];
-            this.clazz = (Class) argument;
+            this.clazz = (Class<?>) argument;
         }
     }
 

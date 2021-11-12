@@ -63,8 +63,8 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 增加操作
      *
-     * @param entity
-     * @throws Exception
+     * @param entity 实体类
+     * @throws Exception Exception
      */
     public int save(Object entity) throws Exception {
         Objects.requireNonNull(entity, "the entity cat't be null");
@@ -126,16 +126,16 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 根据主键删除
      *
-     * @param clazz
-     * @param id
-     * @throws Exception
+     * @param clazz 类
+     * @param id 主键
+     * @throws Exception Exception
      */
     public int deleteById(Class<?> clazz, Serializable id) throws Exception {
         Objects.requireNonNull(id, "the id cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
-        String primarykey = map.get(CommonStr.PRIMARYKEY);
+        String primaryKey = map.get(CommonStr.PRIMARYKEY);
         StringBuilder sql = new StringBuilder("delete from ");
-        sql.append(map.get(CommonStr.TABLE)).append(" where ").append(primarykey);
+        sql.append(map.get(CommonStr.TABLE)).append(" where ").append(primaryKey);
         sql.append(" = ").append("?");
         return this.executeUpdate(sql.toString(), new Object[]{id});
     }
@@ -162,6 +162,9 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         }
         sql.setCharAt(sql.lastIndexOf(","), ' ');
         sql.append("where ").append(map.get(CommonStr.PRIMARYKEY)).append(" = ?");
+        if (primaryField == null) {
+            throw new RuntimeException("the primaryField can not be null");
+        }
         primaryField.setAccessible(true);
         params[fields.length - 1] = primaryField.get(entity);
         return this.executeUpdate(sql.toString(), params);
@@ -170,14 +173,13 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 根据条件删除
      *
-     * @param clazz
-     * @param wrapper
-     * @throws Exception
+     * @param clazz 类
+     * @param wrapper 主键
+     * @throws Exception Exception
      */
     public int delete(Class<?> clazz, DefaultWrapper wrapper) throws Exception {
         Objects.requireNonNull(wrapper, "the wrapper cat't be null");
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
-        String primarykey = map.get(CommonStr.PRIMARYKEY);
         StringBuilder sql = new StringBuilder("delete from ");
         sql.append(map.get(CommonStr.TABLE));
         sql.append(wrapper.getSqlString());
@@ -206,7 +208,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             sql.append(wrapper.getSqlString());
         }
         Object[] params = null;
-        int size = 0;
+        int size;
         if (wrapper != null && (size = wrapper.getValues().size()) > 0) {
             params = new Object[size];
             for (int i = 0; i < size; i++) {
@@ -218,7 +220,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
 
     public List<?> selectList(Class<?> clazz, String sql, Object[] params) throws Exception {
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
-        DBElement dbElement = this.executeQuery(sql.toString(), params);
+        DBElement dbElement = this.executeQuery(sql, params);
         ResultSet resultSet = dbElement.getResultSet();
         List<Object> list = new ArrayList<>();
         Field[] fields = clazz.getDeclaredFields();
@@ -273,10 +275,10 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 执行查询
      *
-     * @param sql
-     * @param params
-     * @return
-     * @throws Exception
+     * @param sql sql
+     * @param params 参数
+     * @return 可利用 InvokeResultSet 来代替
+     * @throws Exception Exception
      */
     public DBElement executeQuery(String sql, Object[] params) throws Exception {
         if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
@@ -287,11 +289,6 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         injectParams(preparedStatement, params);
         ResultSet resultSet = preparedStatement.executeQuery();
-        /**
-         * 可以获取结果集中的结果有几个值
-         */
-        /*ResultSetMetaData metaData = resultSet.getMetaData();
-        int columnCount = metaData.getColumnCount();*/
         // 直接关闭，结果集获取会出现错误
         //preparedStatement.close();
         if (!isBeginTransaction) {
@@ -322,9 +319,9 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 执行增删改操作
      *
-     * @param sql
-     * @param params
-     * @throws Exception
+     * @param sql sql
+     * @param params 参数
+     * @throws Exception Exception
      */
     public int executeUpdate(String sql, Object[] params) throws Exception {
         if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
@@ -346,10 +343,10 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 执行批量增删改操作
      *
-     * @param sql
-     * @param list
-     * @return
-     * @throws Exception
+     * @param sql sql
+     * @param list 参数 List
+     * @return 影响行数
+     * @throws Exception Exception
      */
     public int executeBatch(String sql, List<Object[]> list) throws Exception {
         if (DBConfig.getString("dbType").equals(DBType.ORACLE)) {
@@ -365,6 +362,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
             preparedStatement.addBatch();
         }*/
         int length = 0;
+        //noinspection ForLoopReplaceableByForEach
         for (int i = 0; i < list.size(); i++) {
             injectParams(preparedStatement, list.get(i));
             preparedStatement.addBatch();
@@ -390,15 +388,15 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 注入参数
      *
-     * @param preparedStatement
-     * @param params
-     * @throws SQLException
+     * @param preparedStatement preparedStatement
+     * @param params 参数
+     * @throws SQLException SQLException
      */
     public void injectParams(PreparedStatement preparedStatement, Object[] params) throws SQLException {
         if (params != null && params.length > 0) {
             StringBuilder buffer = new StringBuilder();
             for (Object param : params) {
-                buffer.append(String.valueOf(param)).append("(");
+                buffer.append(param).append("(");
                 buffer.append(param == null ? "Object" : param.getClass().getSimpleName()).append("), ");
             }
             buffer.setCharAt(buffer.lastIndexOf(","), ' ');
@@ -415,11 +413,10 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
     /**
      * 生成插入 sql
      *
-     * @param entity
-     * @return
-     * @throws Exception
+     * @param entity 实体类
+     * @return 生成的 insert sql
      */
-    protected String insertSql(Object entity) throws Exception {
+    protected String insertSql(Object entity) {
         Class<?> aClass = entity.getClass();
         Field[] fields = aClass.getDeclaredFields();
         String name = aClass.getSimpleName();
@@ -434,7 +431,7 @@ public abstract class AbstractSqlExecutor implements SqlExecutor {
         }
         sql.setCharAt(sql.lastIndexOf(","), ' ');
         sql.append(") values ( ");
-        for (Field field : fields) {
+        for (Field ignored : fields) {
             sql.append(" ?, ");
         }
         sql.setCharAt(sql.lastIndexOf(","), ' ');

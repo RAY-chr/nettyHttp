@@ -57,6 +57,11 @@ public class HttpServer {
             });
             RouteMethod.init();
             long end = System.currentTimeMillis();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                bossGroup.shutdownGracefully();
+                workerGroup.shutdownGracefully();
+                logger.info("httpServer has shutdown");
+            }));
             logger.info("the launch cost {} millis", (end - start));
             //监听通道
             fu.channel().closeFuture().sync();

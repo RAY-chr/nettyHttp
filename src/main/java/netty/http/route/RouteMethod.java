@@ -64,10 +64,10 @@ public class RouteMethod {
     /**
      * 反射时解析并设置参数
      *
-     * @param method
-     * @param parameters
-     * @return
-     * @throws Exception
+     * @param method 路径匹配到的方法
+     * @param parameters 参数对
+     * @return 解析后的方法的参数
+     * @throws Exception Exception
      */
     public static Object[] parseRouteParameter(Method method, Map<String, List<String>> parameters) throws Exception {
         Class<?>[] parameterTypes = method.getParameterTypes();

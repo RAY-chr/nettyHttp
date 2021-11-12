@@ -106,9 +106,27 @@ public class Test {
 
         List<Map<String, Object>> list = dao.selectMaps(
                 "select ( SELECT count(*) FROM book ) total,book_id,book_no from book", null);
-        list.forEach(System.out::println);
+        //list.forEach(System.out::println);
 //        dao.selectList("select count(*) total,book_id,book_no from book where book_id = ?",
 //                new Object[]{1});
+        List<Map<String, Object>> maps = dao.selectMaps(buildSql(), null);
+        maps.forEach(System.out::println);
+    }
+
+    private String buildSql() {
+        return "\nSELECT\n" +
+                "\tj.JOB_NAME,\n" +
+                "\tj.DESCRIPTION,\n" +
+                "\tt.TRIGGER_STATE 'job status',\n" +
+                "\tj.JOB_CLASS_NAME,\n" +
+                "\tc.CRON_EXPRESSION \n" +
+                "FROM\n" +
+                "\tqrtz_triggers t,\n" +
+                "\tqrtz_job_details j,\n" +
+                "\tqrtz_cron_triggers c \n" +
+                "WHERE\n" +
+                "\tt.JOB_NAME = j.JOB_NAME \n" +
+                "\tAND t.TRIGGER_NAME = c.TRIGGER_NAME";
     }
 
     /**

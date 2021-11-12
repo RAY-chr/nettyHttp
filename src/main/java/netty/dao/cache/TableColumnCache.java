@@ -35,11 +35,12 @@ public class TableColumnCache {
 
     static {
         Set<Class<?>> classes = PackageScanner.getClasses(entityPath);
-        Connection connection = null;
+        Connection connection;
         try {
             connection = ConnectionPool.getConnection();
         } catch (Exception e) {
             e.printStackTrace();
+            throw new RuntimeException("connection get fail");
         }
         for (Class<?> aClass : classes) {
             String simpleName = aClass.getSimpleName();
@@ -51,7 +52,7 @@ public class TableColumnCache {
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement(
                         sql(DBConfig.getString("dbType"), tableName));
-                ResultSet rs = null;
+                ResultSet rs;
                 try {
                     rs = preparedStatement.executeQuery();
                 } catch (SQLException e) {
@@ -71,13 +72,12 @@ public class TableColumnCache {
                             continue;
                         }
                     }
-                    Field field = null;
+                    Field field;
                     try {
                         field = aClass.getDeclaredField(columnName);
                     } catch (NoSuchFieldException e) {
                         field = getField(aClass, columnName);
                     }
-                    assert field != null;
                     if (field.getAnnotation(TableId.class) != null) {
                         map.put(CommonStr.PRIMARYKEY, columnName);
                     } else {

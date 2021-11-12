@@ -28,7 +28,7 @@ public class OracleSqlExecutor extends AbstractSqlExecutor {
         }
         Map<String, String> map = TableColumnCache.get(clazz.getSimpleName());
         String sql = pageSql(map.get(CommonStr.TABLE), wrapper);
-        Object[] params = null;
+        Object[] params;
         int paramSize = wrapper.getValues().size();
         params = paramSize > 0 ? new Object[paramSize + 2] : new Object[2];
         int length = params.length;
@@ -52,9 +52,9 @@ public class OracleSqlExecutor extends AbstractSqlExecutor {
     /**
      * 生成oracle的分页sql
      *
-     * @param tableName
-     * @param wrapper
-     * @return
+     * @param tableName 表名
+     * @param wrapper DefaultWrapper
+     * @return oracle 分页 sql
      */
     private String pageSql(String tableName, DefaultWrapper wrapper) {
         StringBuilder sql = new StringBuilder("SELECT * FROM (SELECT a.*, ROWNUM rn FROM ( ");

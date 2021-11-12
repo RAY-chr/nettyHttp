@@ -41,6 +41,7 @@ public class ProxyDao {
                             e.printStackTrace();
                             session.rollback();
                             logger.error("[{}] occurs mistake, rollback", method);
+                            throw new RuntimeException(e);
                         } finally {
                             SqlSessionFactory.closeCurrentSession();
                         }
@@ -56,7 +57,7 @@ public class ProxyDao {
     public static <T> T getDao(Class<T> clazz) {
         Object instance = beans.get(clazz);
         Objects.requireNonNull(instance, "not exist the bean belong " + clazz);
-        return (T) getDao(clazz, instance);
+        return getDao(clazz, instance);
     }
 
     static {

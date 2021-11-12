@@ -29,12 +29,12 @@ public class ConnectionPool {
      * 获取连接，如果连接失效，获取有效连接
      * 池子的连接最大加到 max 就会等待，等连接释放的时候，会判断继续等待还是返回连接
      *
-     * @return
-     * @throws Exception
+     * @return Connection
+     * @throws Exception Exception
      */
     public synchronized static Connection getConnection() throws Exception {
-        Connection connection = null;
-        Statement statement = null;
+        Connection connection;
+        Statement statement;
         try {
             connection = connections.removeFirst();
             statement = connection.createStatement();
@@ -44,7 +44,7 @@ public class ConnectionPool {
                     while (count >= max && connections.size() == 0) {
                         ConnectionPool.class.wait();
                     }
-                    return removeFirst(connections);
+                    return removeFirst();
                 }
                 System.err.println("---------------->>>>>>>> no such <<<<<<<<-------------------");
                 for (int i = 0; i < 30; i++) {
@@ -54,7 +54,7 @@ public class ConnectionPool {
             } else if (e instanceof SQLException) {
                 reSet();
             }
-            return removeFirst(connections);
+            return removeFirst();
         }
         statement.close();
         if (expired(connection)) {
@@ -67,8 +67,8 @@ public class ConnectionPool {
     /**
      * 保证有效连接
      *
-     * @return
-     * @throws Exception
+     * @return Connection
+     * @throws Exception Exception
      */
     private static Connection getValidConnection() throws Exception {
         Iterator<Connection> iterator = connections.iterator();
@@ -80,12 +80,12 @@ public class ConnectionPool {
                 expired.remove(next);
             }
         }
-        Connection removeFirst = null;
+        Connection removeFirst;
         try {
             removeFirst = connections.removeFirst();
         } catch (Exception e) {
             reSet();
-            return removeFirst(connections);
+            return removeFirst();
         }
         expired.put(removeFirst, System.currentTimeMillis() + expiredTime * 1000);
         return removeFirst;
@@ -99,10 +99,9 @@ public class ConnectionPool {
     /**
      * 返回连接前修改其时间戳
      *
-     * @param connections
-     * @return
+     * @return Connection
      */
-    private static Connection removeFirst(LinkedList<Connection> connections) {
+    private static Connection removeFirst() {
         Connection connection = connections.removeFirst();
         expired.put(connection, System.currentTimeMillis() + expiredTime * 1000);
         return connection;

@@ -45,7 +45,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
         logger.info("path-> {}", path);
         logger.info("parameters-> {}", parameters);
         Method method = RouteMethod.route(path);
-        Object code = nullStr;
+        Object code;
         String content_type = TEXT_PLAIN;
         if (method != null) {
             ResponseBody annotation = method.getAnnotation(ResponseBody.class);
@@ -92,9 +92,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     /**
      * 拿到请求参数
      *
-     * @param defaultHttpRequest
-     * @return
-     * @throws Exception
+     * @param defaultHttpRequest FullHttpRequest
+     * @return 参数列表
+     * @throws Exception Exception
      */
     public Map<String, List<String>> parameters(FullHttpRequest defaultHttpRequest) throws Exception {
         if (defaultHttpRequest.method() == HttpMethod.GET) {
@@ -107,7 +107,7 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             if (headers.get(HttpHeaderNames.CONTENT_TYPE).contains(APPLICATION_JSON)) {
                 String s = defaultHttpRequest.content().toString(StandardCharsets.UTF_8);
                 JSONObject object = JSONObject.fromObject(s);
-                Set keySet = object.keySet();
+                Set<?> keySet = object.keySet();
                 for (Object o : keySet) {
                     List<String> list = new ArrayList<>();
                     list.add(String.valueOf(object.get(o)));
@@ -117,8 +117,8 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
             }
             HttpPostRequestDecoder decoder = new HttpPostRequestDecoder(defaultHttpRequest);
             decoder.offer(defaultHttpRequest);
-            List<InterfaceHttpData> datas = decoder.getBodyHttpDatas();
-            for (InterfaceHttpData data : datas) {
+            List<InterfaceHttpData> httpData = decoder.getBodyHttpDatas();
+            for (InterfaceHttpData data : httpData) {
                 List<String> list = new ArrayList<>();
                 Attribute attribute = (Attribute) data;
                 list.add(attribute.getValue());
@@ -132,9 +132,9 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     /**
      * 找到访问路径
      *
-     * @param defaultHttpRequest
-     * @return
-     * @throws UnsupportedEncodingException
+     * @param defaultHttpRequest FullHttpRequest
+     * @return url 路径
+     * @throws UnsupportedEncodingException UnsupportedEncodingException
      */
     public String path(FullHttpRequest defaultHttpRequest) throws UnsupportedEncodingException {
         if (defaultHttpRequest.method() == HttpMethod.GET) {
